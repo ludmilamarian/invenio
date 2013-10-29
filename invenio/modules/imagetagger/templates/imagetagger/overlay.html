@@ -1,0 +1,236 @@
+url_{#
+## This file is part of Invenio.
+## Copyright (C) 2013 CERN.
+##
+## Invenio is free software; you can redistribute it and/or
+## modify it under the terms of the GNU General Public License as
+## published by the Free Software Foundation; either version 2 of the
+## License, or (at your option) any later version.
+##
+## Invenio is distributed in the hope that it will be useful, but
+## WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+## General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with Invenio; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+#}
+
+{% extends "page.html" %}
+{%- js url_for('static', filename='js/jquery-ui.min.js'), '01-invenio' -%}
+{%- css url_for('static', filename='css/jquery-ui.css'), '01-invenio' -%}
+{%- js url_for('imagetagger.static', filename='js/imagetagger/tag_display.js'), '50-imagetagger' -%}
+
+{% set title = ("Tagging interface") %}
+
+
+
+{% block header %}
+<style type="text/css" >
+
+            #mapper{
+                border:2px solid #EEE;
+                width:100px;
+                height:100px;
+                min-width:10px;
+                min-height:10px;
+                z-index:1000;
+                position:absolute;
+                top:0;
+                display:none;
+            }
+
+            #planetmap div, #facestotag div{
+
+                display:block;
+                position:absolute;
+            }
+
+            #main_panel{
+                margin: auto;
+                padding: 10px;
+                width: 1000px;
+            }
+
+            .form_panel {
+                float: left;
+                background:#eee;
+                border:5px solid #FFF;
+                outline:1px solid #eee;
+                left: 100px;
+                padding: 5px;
+                position: absolute;
+                top: 40px;
+                width: 310px;
+                display:none;
+                z-index:2000;
+            }
+
+            .form_panel input,textarea{
+                padding:3px;
+                background:#FFF;
+                border:1px solid #CFCFCF;
+                color:#000;
+            }
+
+            #image_panel{
+                float:left;
+                position:relative;
+            }
+
+
+            .form_panel .form_label{
+                float:left;
+                width:80px;
+                padding:5px;
+            }
+
+            .form_panel .field{
+                float:left;
+                width:200px;
+                padding:5px;
+            }
+
+            .form_panel .form_row{
+                clear:both;
+            }
+
+            .tagged_title{
+                background: none repeat scroll 0 0 #538DD3;
+                border: 2px solid;
+                color: #FFFFFF;
+                font-size: 12px;
+                font-weight: bold;
+                padding: 3px;
+                margin-top:5px;
+            }
+
+
+            #info_panel{
+                padding:10px;
+                margin:20px 0;
+                background:#eee;
+            }
+
+
+            input[type='button']{
+                background: none repeat scroll 0 0 #2769C4;
+                border: 1px solid #CFCFCF;
+                color: #FFFFFF;
+                font-weight: bold;
+                height: 30px;
+                padding: 5px;
+            }
+
+            .tagged_box .delete, #mapper .delete {
+				width:25px; 
+				height:29px; 
+				display:inline; 
+				position:absolute; 
+				top:-17px; 
+				right:-18px; 
+				cursor:pointer;
+				opacity: 0.8;
+			}
+
+			.tagged_box .save, #mapper .save {
+				width:20px; 
+				height:20px; 
+				display:inline; 
+				position:absolute; 
+				top:5px; 
+				right:-15px; 
+				cursor:pointer;
+			}
+
+
+        </style>
+
+{% endblock %}
+
+{% block body %}
+<script>
+var del = "{{ url_for('imagetagger.static', filename='img/imagetagger/x2.png') }}";
+var save = "{{ url_for('imagetagger.static', filename='img/imagetagger/save.png') }}";
+var image_width = "{{ width }}";
+var action = "{{ action }}";
+var current_url = "{{ current_url }}";
+</script>
+
+<div id='main_panel'>
+<div style='margin: auto; width: {{ width }}px;'>
+                <div id='image_panel' style='width: {{ width }}px;' >
+                    <img src="{{ url_for('imagetagger.static', filename=image) }}" id='imageMap'  width="{{ width }}px"/>
+                    <div id='mapper' >
+                    <img class='save' src="{{ url_for('imagetagger.static', filename='img/imagetagger/save.png') }}" onclick='openDialog()' />
+                    <img src="{{ url_for('imagetagger.static', filename='img/imagetagger/x2.png') }}" class='delete' value='Delete' onclick='hideBox(this)' />
+                    </div>
+
+                    <div id="planetmap">
+                    {% block imagetag %}
+                    {% endblock %}
+                    </div>
+                    <div id="facestotag">
+                    {% block faces %}
+                    {% endblock %}
+                    </div>
+                    <div class='form_panel' id='form_panel_add'>
+                        <div class='form_row'>
+                            <div class='form_label'>Title</div><div class='field'><input type='text' id='title' /></div>
+                        </div>
+                        <div class='form_row'>
+                            <div class='form_label'>Tag type</div><div class='field'><select id='tag_type'>
+                            	<option value="face">face</option>
+                            	<option value="object">object</option>
+                            	<option value="other">other</option>
+                            </select>
+                            </div>
+                        </div>
+                        <div class='form_row'>
+                            <div class='form_label'></div>
+                            <div class='field'>
+                                <input type='button' value='Add Tag' onclick='addTag()' />
+
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class='form_panel' id='form_panel_modify'>
+                        <div class='form_row'>
+                            <div class='form_label'>Title</div><div class='field'><input type='text' id='title' /></div>
+                        </div>
+                        <div class='form_row'>
+                            <div class='form_label'>Tag type</div><div class='field'><select id='tag_type'>
+                            	<option value="face">face</option>
+                            	<option value="object">object</option>
+                            	<option value="other">other</option>
+                            </select>
+                            </div>
+                        </div>
+                        <div class='form_row'>
+                            <div class='form_label'></div>
+                            <div class='field'>
+                                <input type='button' id='save' value='Save Tag' onclick='saveModifications(this)' />
+
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+            <div style="background: none repeat scroll 0 0 #C7C7C8;
+                 border: 1px solid #AEAEAE;
+                 clear: both;
+                 margin: 20px auto;
+                 padding: 20px 0;
+                 text-align: center;
+                 width: {{ width }}px;">
+                <input type="button" value="Show Tags" onclick="showTags()" />
+                <input type="button" value="Hide Tags" onclick="hideTags()" />
+                <input type="button" value="Save Tags" onclick="sendTags()" />
+            </div>
+            </div>
+
+{% endblock %}

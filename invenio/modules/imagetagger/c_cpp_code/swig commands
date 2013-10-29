@@ -1,0 +1,97 @@
+swig -python -includeall -o normalization_warp.c normalization.i
+
+gcc -c csuPreprocessNormalize.c normalization_warp.c csuCommonMatrix.c csuCommonFile.c csuCommonUtil.c csuCommonSubspace.c csuCommonCommandLine.c csuCommonImage.c csuSubspaceEigen.c csuSubspaceFisher.c csuSubspaceCVEigen.c -Xlinker -export-dynamic -DHAVE_CONFIG_H -I/usr/include/python2.7 -I/usr/lib/python2.7/config -I/home/cern/Downloads/eigenfaces/src/wrap  -L/usr/lib/python2.7/config -lpython2.7 -lm -ld -fpic
+
+gcc -shared *.o -o _normalization.so 
+
+gcc -shared csuPreprocessNormalize.o normalization_warp.o csuCommonMatrix.o csuCommonFile.o csuCommonUtil.o csuCommonSubspace.o csuCommonCommandLine.o csuCommonImage.o csuSubspaceEigen.o csuSubspaceFisher.o csuSubspaceCVEigen.o -o _normalization.so
+
+
+getRawImages("/home/cern/Downloads/att_faces/eyes.srt","/home/cern/Downloads/att_faces/model_images","/home/cern/Downloads/att_faces/result_bayesian/sfi",148)
+
+%typemap(in, numinputs=0) double data[ANY][ANY][ANY] (double data[$1_dim0][$1_dim1][$1_dim2]) {
+   $1 = &temp;
+}
+
+%typemap(argout) double data[ANY][ANY][ANY] (double data[$1_dim0][$1_dim1][$1_dim2]) {
+   // Append output value $1 to $result
+   ...
+}
+
+%module normalization 
+%{
+#include "csuPreprocessNormalize.h"
+#include "csuCommonImage.h"
+%}
+
+%include "numpy.i"
+
+%init %{
+import_array();
+%}
+
+%apply 
+
+typedef struct{
+    int width;
+    int height;
+    int channels;
+    double data[][][];
+} image;
+// Now list ANSI C/C++ declarations
+void normalizeImages(char* eyeFile, char* inputDir, char* sfiDir);
+Image* getRawImages(char* eyeFile, char* inputDir, char* sfiDir, int n);
+int getWidth(Image* images, int img);
+int getHeight(Image* images, int img);
+int getChannels(Image* images, int img);
+//double*** getData(Image* images, int img);
+image getImage(Image* images, int img);
+
+// A typemap for handling any double [][][] array
+%typemap(memberin) double [ANY][ANY][ANY] {
+int i,j,k;
+for (i = 0; i < $dim0; i++)
+for (j = 0; j < $dim1; j++) {
+for (k = 0; k < $dim2; k++) {
+$target[i][j] = *($source+$dim1*i+j);
+}
+}
+}
+
+
+
+%include "numpy.i"
+
+%init %{
+import_array();
+%}
+
+%apply ( DATA_TYPE ARGOUT_ARRAY3[ANY][ANY][ANY] ) {(double*** data)}
+
+%typemap(argout) double [ANY][ANY][ANY] {
+	int i,j,k;
+	for (i = 0; i < $dim0; i++)
+		for (j = 0; j < $dim1; j++) {
+			$target[i][j] = *($source+$dim1*i+j);
+		}
+}
+
+%typemap(in, numinputs=0) double out[ANY][ANY][ANY] (double ***temp) {
+   $1 = temp;
+}
+
+%typemap(argout) double [ANY][ANY][ANY] {
+  int i,j,k,ind=0;
+  $result = PyList_New($1_dim0*$1_dim1*$1_dim2);
+  for (i = 0; i < $1_dim0; i++) {
+    for (j = 0; j < $1_dim1; j++) {
+      for (k = 0; k < $1_dim2; k++) {
+    PyObject *o = PyDouble_FromDouble((double) $1[i]|j][k]);
+    PyList_SetItem($result,ind,o);
+    ind++
+}}
+  }
+}
+
+
+normalizeImageAndWrite("/home/cern/Downloads/att_faces/model_images/s1_1.pgm", "/home/cern/Downloads/att_faces/result_bayesian/sfi/s1_1.sfi", 26,52,63,51)

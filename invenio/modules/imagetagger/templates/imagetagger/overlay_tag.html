@@ -1,0 +1,64 @@
+{#
+## This file is part of Invenio.
+## Copyright (C) 2013 CERN.
+##
+## Invenio is free software; you can redistribute it and/or
+## modify it under the terms of the GNU General Public License as
+## published by the Free Software Foundation; either version 2 of the
+## License, or (at your option) any later version.
+##
+## Invenio is distributed in the hope that it will be useful, but
+## WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+## General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with Invenio; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+#}
+
+{% extends "imagetagger/overlay.html" %}
+
+{% block imagetag %}
+	{% for tag in tags %}
+		<div class="tagged" style="width:{{ tag[4] }}px;height:{{ tag[5] }}px;left:{{ tag[2] }}px;top:{{ tag[3] }}px;" >
+			<div class="tagged_box" id="tag{{ tag[0] }}" style="width:{{ tag[4] }}px;height:{{ tag[5] }}px;display:none;" >
+			</div>
+			<div id="tag{{ tag[0] }}t" class="tagged_title" style="top:{{ tag[6] }}px;display:none;">
+			{{ tag[1] }}
+			</div>
+			<div id="type" style="display:none;">
+			{{ tag[7] }}
+			</div>
+		</div>
+	{% endfor %}
+{% endblock %}
+
+{% block faces %}
+	{% for tag in faces %}
+		<div class="tagged2" style="width:{{ tag[4] }}px;height:{{ tag[5] }}px;left:{{ tag[2] }}px;top:{{ tag[3] }}px;" >
+			<div class="tagged_box" id="tag{{ tag[0] }}" style="width:{{ tag[4] }}px;height:{{ tag[5] }}px;display:none;position:absolute;" >
+			</div>
+			<div id="tag{{ tag[0] }}f" class="tagged_title" style="top:{{ tag[6] }}px;display:none;">
+			{% if tag[1] != '' %}
+				{{ tag[1] }}
+			{% else %}
+				?
+			{% endif %}
+			</div>
+		</div>
+	{% endfor %}
+	{% for tag in suggested %}
+		<div class="tagged2" style="width:{{ tag[4] }}px;height:{{ tag[5] }}px;left:{{ tag[2] }}px;top:{{ tag[3] }}px;" >
+			<div class="tagged_box" id="tag{{ tag[0] }}" style="width:{{ tag[4] }}px;height:{{ tag[5] }}px;display:none;position:absolute;" >
+			</div>
+			<div id="tag{{ tag[0] }}f" class="tagged_title" style="top:{{ tag[6] }}px;display:none;">
+			{% if tag[1] != '' %}
+				{{ tag[1] }}
+			{% else %}
+				?
+			{% endif %}
+			</div>
+		</div>
+	{% endfor %}
+{% endblock %}
