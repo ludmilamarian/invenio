@@ -155,6 +155,13 @@ from invenio.legacy.websearch_external_collections.config import CFG_HOSTED_COLL
 from invenio.legacy.websearch_external_collections.config import CFG_HOSTED_COLLECTION_TIMEOUT_POST_SEARCH
 from invenio.legacy.websearch_external_collections.config import CFG_EXTERNAL_COLLECTION_MAXRESULTS
 
+from invenio.modules.search.views.search import getImageSimilarity, \
+    deleteImageSimilarity
+from invenio.modules.image_similarity.image_similarity_search import find_similar_from_path, \
+    find_similar_from_recid
+from invenio.modules.image_similarity.image_similarity_config import CFG_IMAGE_SIMILARITY_SIMILAR_SEARCH_ALGO, \
+    CFG_IMAGE_SIMILARITY_SIMILAR_NUM_RESULTS
+
 VIEWRESTRCOLL_ID = acc_get_action_id(VIEWRESTRCOLL)
 
 ## global vars:
@@ -5160,7 +5167,7 @@ def perform_request_search(req=None, cc=CFG_SITE_NAME, c=None, p="", f="", rg=CF
                         p1="", f1="", m1="", op1="", p2="", f2="", m2="", op2="", p3="", f3="", m3="", sc=0, jrec=0,
                         recid=-1, recidb=-1, sysno="", id=-1, idb=-1, sysnb="", action="", d1="",
                         d1y=0, d1m=0, d1d=0, d2="", d2y=0, d2m=0, d2d=0, dt="", verbose=0, ap=0, ln=CFG_SITE_LANG, ec=None, tab="",
-                        wl=0, em=""):
+                        wl=0, em="", process=None):
     """Perform search or browse request, without checking for
        authentication.  Return list of recIDs found, if of=id.
        Otherwise create web page.
@@ -5342,7 +5349,7 @@ def perform_request_search(req=None, cc=CFG_SITE_NAME, c=None, p="", f="", rg=CF
                                 p1=p1, f1=f1, m1=m1, op1=op1, p2=p2, f2=f2, m2=m2, op2=op2, p3=p3, f3=f3, m3=m3, sc=sc, jrec=jrec,
                                 recid=recid, recidb=recidb, sysno=sysno, id=id, idb=idb, sysnb=sysnb, action=action, d1=d1,
                                 d1y=d1y, d1m=d1m, d1d=d1d, d2=d2, d2y=d2y, d2m=d2m, d2d=d2d, dt=dt, verbose=verbose, ap=ap, ln=ln, ec=ec,
-                                tab=tab, wl=wl, em=em)
+                                tab=tab, wl=wl, em=em, process=process)
 
     return prs_perform_search(kwargs=kwargs, **kwargs)
 
@@ -5359,7 +5366,7 @@ def prs_perform_search(kwargs=None, **dummy):
 
 
 def prs_wash_arguments_colls(kwargs=None, of=None, req=None, cc=None, c=None, sc=None, verbose=None,
-                          aas=None, ln=None, em="", **dummy):
+                          aas=None, ln=None, em="", process=None, **dummy):
     """
     Check and wash collection list argument before we start searching.
     If there are troubles, e.g. a collection is not defined, print
@@ -5416,7 +5423,7 @@ def prs_wash_arguments(req=None, cc=CFG_SITE_NAME, c=None, p="", f="", rg=CFG_WE
                       p1="", f1="", m1="", op1="", p2="", f2="", m2="", op2="", p3="", f3="", m3="",
                       sc=0, jrec=0, recid=-1, recidb=-1, sysno="", id=-1, idb=-1, sysnb="", action="", d1="",
                       d1y=0, d1m=0, d1d=0, d2="", d2y=0, d2m=0, d2d=0, dt="", verbose=0, ap=0, ln=CFG_SITE_LANG,
-                      ec=None, tab="", uid=None, wl=0, em="", **dummy):
+                      ec=None, tab="", uid=None, wl=0, em="", process=None, **dummy):
     """
     Sets the (default) values and checks others for the PRS call
     """
@@ -5483,7 +5490,7 @@ def prs_wash_arguments(req=None, cc=CFG_SITE_NAME, c=None, p="", f="", rg=CFG_WE
               'd1y':d1y, 'd1m':d1m, 'd1d':d1d, 'd2':d2, 'd2y':d2y, 'd2m':d2m, 'd2d':d2d, 'dt':dt, 'verbose':verbose, 'ap':ap, 'ln':ln, 'ec':ec,
               'tab':tab, 'wl':wl, 'em': em,
               'datetext1': datetext1, 'datetext2': datetext2, 'uid': uid, 'cc':cc, 'pl': pl, 'pl_in_url': pl_in_url, '_': _,
-              'selected_external_collections_infos':None,
+              'selected_external_collections_infos':None, 'process':process
             }
 
     kwargs.update(**dummy)
@@ -5492,7 +5499,7 @@ def prs_wash_arguments(req=None, cc=CFG_SITE_NAME, c=None, p="", f="", rg=CFG_WE
 
 def prs_search(kwargs=None, recid=0, req=None, cc=None, p=None, p1=None, p2=None, p3=None,
               f=None, ec=None, verbose=None, ln=None, selected_external_collections_infos=None,
-              action=None,rm=None, of=None, em=None,
+              action=None,rm=None, of=None, em=None, process=None,
               **dummy):
     """
     This function write various bits into the req object as the search
@@ -5500,8 +5507,15 @@ def prs_search(kwargs=None, recid=0, req=None, cc=None, p=None, p1=None, p2=None
     search ended)
     """
 
+    if process is not None:
+        # send to image_similarity module (process is temp file name)                
+        # send path to sim fct -> retrieve list of recids (we do this in prs_search_similar_records by sending path as process)
+        output = prs_search_similar_records(kwargs=kwargs, **kwargs)
+        deleteImageSimilarity(process) # delete tmp file        
+        return output
+
     ## 0 - start output
-    if recid >= 0: # recid can be 0 if deduced from sysno and if such sysno does not exist
+    elif recid >= 0: # recid can be 0 if deduced from sysno and if such sysno does not exist
         output = prs_detailed_record(kwargs=kwargs, **kwargs)
         if output is not None:
             return output
@@ -5633,7 +5647,7 @@ def prs_search_similar_records(kwargs=None, req=None, of=None, cc=None, pl_in_ur
                                     p2, f2, m2, op2, p3, f3, m3, sc, pl, d1y, d1m, d1d, d2y, d2m, d2d, dt, jrec, ec, action,
                                     em
                                     ))
-    if record_exists(p[6:]) != 1:
+    if record_exists(p[6:]) != 1 and process is None:
         # record does not exist
         if of.startswith("h"):
             if req.method == 'HEAD':
@@ -5649,9 +5663,18 @@ def prs_search_similar_records(kwargs=None, req=None, of=None, cc=None, pl_in_ur
             print_records_prologue(req, of)
             print_records_epilogue(req, of)
     else:
-        # record well exists, so find similar ones to it
+        # record well exists, so find similar ones to it        
         t1 = os.times()[4]
-        results_similar_recIDs, results_similar_relevances, results_similar_relevances_prologue, results_similar_relevances_epilogue, results_similar_comments = \
+        
+
+        if process is not None:
+            full_path_to_image = getImageSimilarity(process) # get full path to tmp file (in search/views/search.py fct getImageSimilarity(process) -> full path)
+            results_similar_recIDs, dummy, dummy = find_similar_from_path(full_path_to_image, CFG_IMAGE_SIMILARITY_SIMILAR_SEARCH_ALGO, CFG_IMAGE_SIMILARITY_SIMILAR_NUM_RESULTS) # call module with path
+        elif p[6:] in get_collection_reclist('Photos'): # change to CFG_IMG_SIM_COLLECTIONS 
+            # invenio.bibrecord  if set(record_get_field(p[6:],'980').field_get_subfield_values())).intersection(set(CFG_IMG_SIM_COLLECTIONS)) not None:
+            results_similar_recIDs, dummy, dummy = find_similar_from_recid(p[6:], CFG_IMAGE_SIMILARITY_SIMILAR_SEARCH_ALGO, CFG_IMAGE_SIMILARITY_SIMILAR_NUM_RESULTS) # call module with recid
+        else:
+            results_similar_recIDs, results_similar_relevances, results_similar_relevances_prologue, results_similar_relevances_epilogue, results_similar_comments = \
                                 rank_records_bibrank(rm, 0, get_collection_reclist(cc), string.split(p), verbose, f, rg, jrec)
         if results_similar_recIDs:
             t2 = os.times()[4]

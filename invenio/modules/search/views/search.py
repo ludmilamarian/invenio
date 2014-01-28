@@ -24,7 +24,7 @@ import string
 import functools
 import cStringIO
 from math import ceil
-from flask import make_response, g, request, flash, jsonify, \
+from flask import make_response, render_template, g, request, flash, jsonify, \
     redirect, url_for, current_app, abort, session, Blueprint
 from flask.ext.login import current_user
 
@@ -46,6 +46,12 @@ from flask.ext.breadcrumbs import \
 from invenio.ext.template.context_processor import \
     register_template_context_processor
 from invenio.utils.pagination import Pagination
+
+from os.path import join as path_join
+# TMP LOCATION FOR IMAGE SIMILARITY
+from invenio.base.config import CFG_TMPDIR
+
+SAVE_IMS = path_join(CFG_TMPDIR, 'similartmp')
 
 blueprint = Blueprint('search', __name__, url_prefix="",
                       template_folder='../templates',
@@ -72,6 +78,29 @@ def min_length(length, code=406):
         return value
     return checker
 
+def checkImageSimilarity(name):
+    """ Check if the image exists"""
+    from os.path import exists
+    if exists(path_join(SAVE_IMS, name)):
+        return True
+    return False
+
+def getImageSimilarity(name):
+    return path_join(SAVE_IMS, name)
+
+def deleteImageSimilarity(name):
+    """ Delete the image """
+    import os.remove
+    try:
+        os.remove(path_join(SAVE_IMS, name))
+    except:
+        pass
+
+def validateImageSimilarity(name):
+    """ Validate the name """
+    if name is not None:
+        return name.isalnum()
+    return False
 
 def check_collection(method=None, name_getter=collection_name_from_request,
                      default_collection=False):
@@ -140,6 +169,67 @@ def index():
             format_record=format_record,
         )
     return dict(collection=collection)
+
+@blueprint.route('/similarImage', methods=['POST', 'GET'], defaults={'name':None})
+@blueprint.route('/similarImage/<name>', methods=['GET'])
+def similarImage(name):
+    """ Similar Image submition """
+    # Allowed extensions
+    ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
+    if request.method == 'GET':
+        if validateImageSimilarity(name) and checkImageSimilarity(name):
+            from flask import send_file
+            try:
+                import Image
+                image = Image.open(path_join(SAVE_IMS, name))
+                thumb = image.resize((180, 120), Image.NEAREST)
+                thumb.save(path_join(SAVE_IMS, "%s-thumb" % name), 'JPEG')
+                return send_file('%s/%s-thumb' % (SAVE_IMS, name), mimetype='image/jpg')
+            except:
+            # FIXME return proper mimetype
+                return send_file('%s/%s' % (SAVE_IMS, name), mimetype='image/png')
+        return render_template('search/similarImage.html')
+    elif request.method == 'POST':
+        from tempfile import NamedTemporaryFile
+        from shutil import copyfileobj
+        import errno
+        from os import mkdir
+        from os.path import isdir
+        # check if the folder exists
+        try:
+            mkdir(SAVE_IMS)
+        except OSError as exc:
+            if exc.errno == errno.EEXIST and isdir(SAVE_IMS):
+                pass
+            else:
+                flash(_('An error occurred'), 'error')
+                return redirect(request.referrer)
+        # lets start
+        theFile = request.files['file']
+        ext = theFile.filename.rsplit('.', 1)[1].lower() \
+              if '.' in theFile.filename else None
+        # check if the file is on Allowed extensions
+        if theFile and ext in ALLOWED_EXTENSIONS:
+            try:
+                # create the tmp file
+                tmpFile = NamedTemporaryFile(mode='w+b',
+                                            dir=SAVE_IMS,
+                                            delete=False)
+                copyfileobj(theFile, tmpFile)
+                name = tmpFile.name.rsplit('/', 1)[1]
+                tmpFile.close()
+                return redirect(url_for('search.search',
+                                       process=name))
+            except:
+                flash(_('Server is full please try again in a few minutes.'),
+                      'error')
+        else:
+            flash(_('Extension <strong>.%s</strong> does not supported!' %
+                    ext), 'error')
+    else:
+        flash(_('Action request does not supported'), 'error')
+    # in all other cases return to referrer with flash
+    return redirect(request.referrer)
 
 
 @blueprint.route('/collection/<name>', methods=['GET', 'POST'])
@@ -357,6 +447,12 @@ def search(collection, p, of, so, rm):
     if 'c' in request.args and len(request.args) == 1 \
             and len(request.args.getlist('c')) == 1:
         return redirect(url_for('.collection', name=request.args.get('c')))
+
+    if 'process' in request.args:
+        if not validateImageSimilarity(request.args.get('process')) \
+               or not checkImageSimilarity(request.args.get('process')):
+            flash(_('Unknown File'), 'error')
+            return redirect(url_for('.index'))
 
     argd = argd_orig = wash_search_urlargd(request.args)
     argd['of'] = 'id'

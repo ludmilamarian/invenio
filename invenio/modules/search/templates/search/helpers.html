@@ -327,8 +327,8 @@
 
 {% macro searchsettings_form(collection) %}
 
-  <form action="{{ url_for('search.search') }}" 
-    name="settings" 
+  <form action="{{ url_for('search.search') }}"
+    name="settings"
     method="get"
     class="form-horizontal">
     <div class="row">
@@ -429,10 +429,49 @@
       <i class="glyphicon glyphicon-ok"></i> {{ _('Apply') }}
     </button>
   </div>
-  
+
   </form>
 
 {% endmacro %}
+{% macro similarImageBox() %}
+    {% if request.args.get('process', '') != '' %}
+       <div class="row">
+           <div class="col-md-12">
+               <div class="seimilarImageBox">
+                    <img width="180" src="{{url_for('similarImage/%s'% request.args.get('process')) }}" />
+               </div>
+            </div>
+       </div>
+   {% endif %}
+{% endmacro %}
+
+{% macro similarImageForm() %}
+ <div class="modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+             <h4 class="modal-title"> {{_('Similar Image')}}</h4>
+        </div>
+        <div class="modal-body">
+            <script type="text/javascript">
+                $(function(){
+                    $('#similarImageInput').on('change', function(){
+                        $('#similarImageForm').submit();
+                        $('#similarImageWrapper').html('<center>Uploading image please wait... </center>');
+                    });
+                });
+            </script>
+            <div id="similarImageWrapper">
+                <form action="{{url_for('similarImage')}}" id="similarImageForm" method="post" enctype="multipart/form-data">
+                    <input type="file" name="file" id="similarImageInput" />
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+
 
 {% macro search_form(collection) %}
   <style>
@@ -443,7 +482,7 @@
 
     /* -------------- */
 
-    /* 
+    /*
     to make "add to search" form look consistent
     in much shrinked window
 
@@ -484,7 +523,7 @@
       max-height: none;
     }
 
-    /* 
+    /*
       somehow original bootstrap's -4px doesn't look good
       and results in thick (double) borders around buttons
     */
@@ -514,7 +553,7 @@
        }
     }
 
-    /* 
+    /*
       showing dropdown stil as dropdown
       on shrinked window
     */
@@ -545,11 +584,10 @@
           {{ _("Search %s records for")|format(nbrecs) }}
         </span>
       </div>
-
       <!-- Collect the nav links, forms, and other content for toggling -->
       <div class="navbar-collapse">
         <ul class="nav navbar-nav navbar-right">
-          
+
         </ul>
         <form action="{{ url_for('search.search') }}"
             name="search"
@@ -618,6 +656,11 @@
                 </a>
               </span>
               <span class="input-group-btn">
+                <!-- Similar images button -->
+                <a href="{{url_for('similarImage')}}" data-target="" data-toggle="modal" class="btn btn-default btn-inline-hide-sm">
+                    <i class="glyphicon glyphicon-camera"></i>
+                </a>
+                <!-- Similar images button -->
                 <button name="action_search" type="submit" class="btn btn-primary btn-inline-icon-hide-sm">
                   <i class="glyphicon glyphicon-search"></i><span>&nbsp;{{ _("Search") }}</span>
                 </button>
@@ -648,7 +691,7 @@
         </div>
       </div><!-- /.navbar-collapse -->
     </nav>
-
+ 
   </div>
   {% for category, msg in get_flashed_messages(with_categories=True, category_filter=['websearch-after-search-form']) %}
   <div class="row">
@@ -701,7 +744,7 @@
 
         @param radioButtons jQuerySelector for all the buttons in a group
       */
-   
+
       radioButtons.click(function () {
         var buttons = $(this).siblings();
         if (buttons.hasClass("active")) {
@@ -869,7 +912,7 @@
 
     searchField.searchTypeahead(autocompleteQueriesType, source);
 
-    
+
     // END -------------- SEARCH TYPEAHEAD -------------- END
 
     // ------------ typehead for "Add to search" form ----------------
@@ -886,10 +929,7 @@
         limit: 10
       });
     });
-
     // ---------------------------------------------------------------
-
-  });
-
+     });
  </script>
 {% endmacro %}
