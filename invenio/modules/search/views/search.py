@@ -205,12 +205,16 @@ def similarImage(name):
                 flash(_('An error occurred'), 'error')
                 return redirect(request.referrer)
         # lets start
-        theFile = request.files['file']
+        theFile = request.files['file']        
         ext = theFile.filename.rsplit('.', 1)[1].lower() \
               if '.' in theFile.filename else None
         # check if the file is on Allowed extensions
         if theFile and ext in ALLOWED_EXTENSIONS:
             try:
+                #     img = Image.open(recId)
+                #     img = img.convert("RGB")
+                #     name = recId
+                #     img.save(name+'.jpg','JPEG',quality=100) #by default, quality is 75%
                 # create the tmp file
                 tmpFile = NamedTemporaryFile(mode='w+b',
                                             dir=SAVE_IMS,

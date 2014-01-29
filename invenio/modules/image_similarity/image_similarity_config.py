@@ -14,7 +14,7 @@ CFG_IMAGE_SIMILARITY_TRANSFORM_THRESHOLDS = {"descriptorColorLayout":6, "descrip
 # Path to folder where images are preprocessed before sent to indexing
 #CFG_IMAGE_SIMILARITY_IMAGE_FOLDER = '/home/michael/Test pylire/Images'
 # Path to folder where indexes are stored
-CFG_IMAGE_SIMILARITY_INDEX_FOLDER = '/opt/invenio/var/data/Indexes'
+CFG_IMAGE_SIMILARITY_INDEX_FOLDER = '/home/michael/demo/Indexes'
 
 # Invenio collections whose images are to be indexed
 CFG_IMAGE_SIMILARITY_IMAGE_COLLECTIONS = ['Pictures']

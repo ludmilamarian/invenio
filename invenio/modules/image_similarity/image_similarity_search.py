@@ -1,6 +1,6 @@
 import pylire
 import numpy
-from sklearn.cluster import spectral_clustering
+#from sklearn.cluster import spectral_clustering
 
 from image_similarity_config import CFG_IMAGE_SIMILARITY_TRANSFORM_FEATURES, \
     CFG_IMAGE_SIMILARITY_TRANSFORM_THRESHOLDS, \
@@ -95,21 +95,21 @@ def find_transformed_versions_from_recid(recid):
 def find_similar_from_path(img_path, method, number_of_results_wanted):
     results = list()
     # sift - entropy - clue - combined - BOVW
-    if method=='CLUE':
-        clue_results = handler.clueSearch(img_path, index_folder, CFG_IMAGE_SIMILARITY_CLUE_FEATURES,num_seeds,num_seeded)
-        adjmat = clue_results.adjacencyMatrix
-        rows = list()
-        for i in range(len(adjmat)):
-            row = list()
-            line = pylire.JArray('double').cast_(adjmat[i])
-            for j in range(len(line)):
-                row.append(line[j])
-            rows.append(row)
-        adjmat = numpy.array(rows)
-        labels = spectral_clustering(adjmat, n_clusters=2)
-        recid_to_position = dict()
-        for label in labels:
-            print label
+    # if method=='CLUE':
+    #     clue_results = handler.clueSearch(img_path, index_folder, CFG_IMAGE_SIMILARITY_CLUE_FEATURES,num_seeds,num_seeded)
+    #     adjmat = clue_results.adjacencyMatrix
+    #     rows = list()
+    #     for i in range(len(adjmat)):
+    #         row = list()
+    #         line = pylire.JArray('double').cast_(adjmat[i])
+    #         for j in range(len(line)):
+    #             row.append(line[j])
+    #         rows.append(row)
+    #     adjmat = numpy.array(rows)
+    #     labels = spectral_clustering(adjmat, n_clusters=2)
+    #     recid_to_position = dict()
+    #     for label in labels:
+    #         print label
 
 
 

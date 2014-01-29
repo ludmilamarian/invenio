@@ -103,7 +103,6 @@ def authenticate(nickname_or_email=None, password=None,
     from invenio.base.i18n import _
     from invenio.ext.sqlalchemy import db
     from invenio.modules.accounts.models import User
-    from sqlalchemy.orm.exc import NoResultFound
 
     where = [db.or_(User.nickname == nickname_or_email,
                     User.email == nickname_or_email)]
@@ -111,16 +110,14 @@ def authenticate(nickname_or_email=None, password=None,
         where.append(User.password == password)
     try:
         user = User.query.filter(*where).one()
-    except NoResultFound:
-        return None
     except:
-        return False
+        return None
 
     if user.settings['login_method'] != login_method:
         flash(
             _("You are not authorized to use '%(x_login_method)s' login method.",
               x_login_method=login_method), 'error')
-        return False
+        return None
 
     if user.note == '2':  # account is not confirmed
         logout_user()
