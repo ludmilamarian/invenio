@@ -12,18 +12,20 @@
 </h4>
 {% endblock %}
 
+
+
 {% block record_content %}
 <div class="media" style="margin-bottom: 10px;">
     <span class="pull-left">
-        {% for resource in record['url'] if resource.get('nonpublic_note') == 'icon' %}
+        {% for resource in record['files'] if resource.get('subformat') == 'icon' %}
         <a class="thumbnail" href="{{ url_for('record.metadata', recid=record['recid']) }}">
             <img src="{{ resource.get("url", "").replace(" ","") }}"
                  alt="" border="0" style="max-width: 80px;"/>
         </a>
         {% endfor %}
     </span>
-    <span class="pull-right">
 
+    <span class="pull-right">
     </span>
 
     <div class="media-body">

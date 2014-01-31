@@ -90,7 +90,7 @@ def getImageSimilarity(name):
 
 def deleteImageSimilarity(name):
     """ Delete the image """
-    import os.remove
+    import os
     try:
         os.remove(path_join(SAVE_IMS, name))
     except:
@@ -211,10 +211,6 @@ def similarImage(name):
         # check if the file is on Allowed extensions
         if theFile and ext in ALLOWED_EXTENSIONS:
             try:
-                #     img = Image.open(recId)
-                #     img = img.convert("RGB")
-                #     name = recId
-                #     img.save(name+'.jpg','JPEG',quality=100) #by default, quality is 75%
                 # create the tmp file
                 tmpFile = NamedTemporaryFile(mode='w+b',
                                             dir=SAVE_IMS,
@@ -457,7 +453,8 @@ def search(collection, p, of, so, rm):
                or not checkImageSimilarity(request.args.get('process')):
             flash(_('Unknown File'), 'error')
             return redirect(url_for('.index'))
-
+        #print request.args['process']
+        
     argd = argd_orig = wash_search_urlargd(request.args)
     argd['of'] = 'id'
 

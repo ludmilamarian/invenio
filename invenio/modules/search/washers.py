@@ -60,6 +60,7 @@ def get_search_results_default_urlargd():
         'verbose': (int, 0),
         'ec': (list, []),
         'wl': (int, cfg['CFG_WEBSEARCH_WILDCARD_LIMIT']),
+        'process': (str, ""),
         }
 
 search_results_default_urlargd = LazyDict(get_search_results_default_urlargd)

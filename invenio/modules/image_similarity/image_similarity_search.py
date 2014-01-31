@@ -1,6 +1,6 @@
 import pylire
 import numpy
-#from sklearn.cluster import spectral_clustering
+from sklearn.cluster import spectral_clustering
 
 from image_similarity_config import CFG_IMAGE_SIMILARITY_TRANSFORM_FEATURES, \
     CFG_IMAGE_SIMILARITY_TRANSFORM_THRESHOLDS, \
@@ -17,12 +17,11 @@ from image_similarity_config import CFG_IMAGE_SIMILARITY_TRANSFORM_FEATURES, \
 from image_similarity_engine import handler
 from image_similarity_utils import get_image_path_from_rec_id
 
-#--------put in controller/engine----------SET EVERYTHING UP
-#pylire.initVM()
+
 index_folder = CFG_IMAGE_SIMILARITY_INDEX_FOLDER
 num_seeds = CFG_IMAGE_SIMILARITY_CLUE_NUMBER_OF_SEEDS
 num_seeded = CFG_IMAGE_SIMILARITY_CLUE_NUMBER_OF_HITS_PER_SEED
-#handler = pylire.InvenioHandler()
+
 
 
 
@@ -45,19 +44,19 @@ def find_identical_versions_from_path(imgPath):
             doc = hit[i]
             if hit.score(i) <= CFG_IMAGE_SIMILARITY_DUPLICATE_THRESHOLDS[ft]:
                 results[ft].add(doc.get("descriptorImageIdentifier"))
-                #print 'Distance from query : ' + str(hit.score(i))
             else:
                 break
     resultsIntersect = set.intersection(*[featureSet for featureSet in results.values()]) 
     return resultsIntersect
 
 '''
-Finds EXACT duplicates to an image given by recid. Search recid will be removed from results.
+Finds EXACT duplicates to an image given by recid. Search recid will not be removed from results.
 '''
 def find_identical_versions_from_recid(recid):
     img_path = get_image_path_from_rec_id(recid)[0]
     results = find_identical_versions_from_path(img_path)
-    return results.difference(set(str(recid)))
+    return results
+    #return results.difference(set(str(recid)))
 
 
 
@@ -77,49 +76,98 @@ def find_transformed_versions_from_path(img_path):
             doc = hit[i]
             if hit.score(i) <= CFG_IMAGE_SIMILARITY_TRANSFORM_THRESHOLDS[ft]:
                 results.append(doc.get("descriptorImageIdentifier"))
-                #print 'Distance from query : ' + str(hit.score(i))
             else:
                 break # since hits are ordered by score, as soon as one is above threshold all subsequent will also be
     return list(set(results))
 
 '''
-Finds APPROXIMATE duplicates to an image given by recid. Search recid will be removed from results.
+Finds APPROXIMATE duplicates to an image given by recid. Search recid will not be removed from results.
 '''
 def find_transformed_versions_from_recid(recid):
     img_path = get_image_path_from_rec_id(recid)[0]
     results = find_transformed_versions_from_path(img_path)
-    return list(set(results).difference(set(str(recid))))
+    return results
+    #return list(set(results).difference(set(str(recid))))
 
 
-
-def find_similar_from_path(img_path, method, number_of_results_wanted):
-    results = list()
+'''
+Searches for similar images using an algorithm specified in the function call
+'''
+def find_similar_from_path(img_path, method, number_of_results_wanted, newimage=False):
+   # results = list()
     # sift - entropy - clue - combined - BOVW
-    # if method=='CLUE':
-    #     clue_results = handler.clueSearch(img_path, index_folder, CFG_IMAGE_SIMILARITY_CLUE_FEATURES,num_seeds,num_seeded)
-    #     adjmat = clue_results.adjacencyMatrix
-    #     rows = list()
-    #     for i in range(len(adjmat)):
-    #         row = list()
-    #         line = pylire.JArray('double').cast_(adjmat[i])
-    #         for j in range(len(line)):
-    #             row.append(line[j])
-    #         rows.append(row)
-    #     adjmat = numpy.array(rows)
-    #     labels = spectral_clustering(adjmat, n_clusters=2)
-    #     recid_to_position = dict()
-    #     for label in labels:
-    #         print label
+    
+
+    # TODO on correct installation, with access to Image package, uncomment preprocessing stage
+    # if newimage is True -> preprocess an uploaded image
+    # if newimage:
+    #     import Image
+    #                     #     img = Image.open(recId)
+    #             #     img = img.convert("RGB")
+    #             #     name = recId
+    #             #     img.save(name+'.jpg','JPEG',quality=100) #by default, quality is 75%
+    #     converted = Image.open(img_path)
+    #     converted = converted.convert("RGB")
+    #     # maybe check image original extension
+    #     converted.save(img_path,'JPEG',quality=100)
 
 
 
+    # TODO: untested, virtualenvironment does not have scipy installed correctly.
+    if method=='CLUE':
+        clue_results = handler.clueSearch(img_path, index_folder, CFG_IMAGE_SIMILARITY_CLUE_FEATURES,num_seeds,num_seeded)
+        adjmat = clue_results.adjacencyMatrix
+        rows = list()
+        for i in range(len(adjmat)):
+            row = list()
+            line = pylire.JArray('double').cast_(adjmat[i])
+            for j in range(len(line)):
+                row.append(line[j])
+            rows.append(row)
+        adjmat = numpy.array(rows)  
+        reverse_mapping = clue_results.getReverseMapping()
+        try:
+            labels = spectral_clustering(adjmat, n_clusters=2) 
+            clusters = dict()
+            place = 0
+            query_cluster = -1
+            for label in labels:
+                next_img_path = reverse_mapping.get(place)
+                if next_img_path==img_path:
+                    query_cluster = label
+                if clusters[label]:
+                    clusters[label].extend(next_img_path)
+                else:
+                    clusters.update({label:[next_img_path]})
+                place = place + 1
+            if query_cluster == -1:
+                recids = list()
+                for cluster_name in clusters:
+                    recids.extend(clusters[cluster_name])
+                return recids
+            else:
+                recids = list()
+                recids.extend(clusters[query_cluster])
+                for cluster_name in clusters:
+                    if cluster_name != query_cluster:
+                        recids.extend(clusters[cluster_name])
+                return recids
+
+        except ValueError:
+            recids = list()
+            for i in range(reverse_mapping.size()):
+                recids.append(reverse_mapping.get(i))
+            return recids
         # make various clusters (simply lists of recids) from labels and clue_results.mapIdToPosition
+
 
     if method=='COMBINE':
         hits = handler.search(img_path, index_folder, CFG_IMAGE_SIMILARITY_COMBINE_FEATURES,number_of_results_wanted)
         h_n,h_d = translateHitsToDictionary(hits,CFG_IMAGE_SIMILARITY_COMBINE_FEATURES)
         norm_d = normalizeScores(h_d)
         comb_hits, comb_dists = combine(h_n,norm_d,0,number_of_results_wanted)
+#        import ipdb; ipdb.set_trace()
+        comb_hits.reverse() # TODO search_engine reverses list of recids from search
         return comb_hits
     
 
@@ -128,17 +176,21 @@ def find_similar_from_path(img_path, method, number_of_results_wanted):
         h_n,h_d = translateHitsToDictionary(hits,CFG_IMAGE_SIMILARITY_STANDARDIZE_FEATURES)
         std_d = normalizeScores(h_d)
         std_hits, std_dists = combine(h_n,std_d,0,number_of_results_wanted)
+        std_hits.reverse() # TODO search_engine reverses list of recids from search
         return std_hits
 
 
 
-    return results
+    return None
 
 
 def find_similar_from_recid(recid, method, number_of_results_wanted):
     img_path = get_image_path_from_rec_id(recid)[0]
     results = find_similar_from_path(img_path, method, number_of_results_wanted)
-    return list(set(results).difference(set(str(recid))))
+    #import ipdb; ipdb.set_trace()
+    #return results # if don't mind if recid is in results list
+    return filter(lambda el: not el == recid, results)
+    #return list(set(results))#.difference(set(str(recid))))
 
 
 
@@ -165,6 +217,7 @@ def translateHitsToDictionary(hits,features):
             doc = hit[i]
             hits_names[ft].append(doc.get("descriptorImageIdentifier"))
             hits_dists[ft].append(hit.score(i))
+
     return hits_names, hits_dists
 
 
@@ -229,8 +282,7 @@ def normalizeScores(dists):
             # Here we have to take last element of current list divide all by this, except first element, then do 1-this to all list (except first elem)
             toAdd = list()
             #toAdd.append(0)
-            if sch:
-                toAdd.append(1-float(sch)/float(search[len(search)-1]))
+            toAdd.append(1-float(sch)/float(search[len(search)-1]))
             newdists[feat].append(toAdd)
     return newdists
 
@@ -261,32 +313,30 @@ def combine(hbt, dbt, weighted, number_of_results_wanted):
     for i in range(len(hbt[hbt.keys()[0]])):
         for feature in hbt.keys():
             search.append(hbt[feature][i])
-            searchdist.append([d*weightsByFeature[feature] for d in dbt[feature][i]]) # to weight each feature: apply weigths by feature to each elem of this dbt[ft][i] before sending to next function
-        results1, results2 = combineBySearch(search, searchdist, number_of_results_wanted)
-        resultshits.append(results1)
-        resultsdists.append(results2)
-        search = list()
-        searchdist = list()
+            searchdist.extend([d*weightsByFeature[feature] for d in dbt[feature][i]]) # to weight each feature: apply weigths by feature to each elem of this dbt[ft][i] before sending to next function
+    results1, results2 = combineBySearch(search, searchdist, number_of_results_wanted)
+    resultshits = results1
+    resultsdists = results2
     return resultshits, resultsdists
 
 
 def combineBySearch(names, scores, number_of_results_wanted): # names are search results for one search, one list for every feature. scores are corresp dists
     results = dict()
-    for i in range(len(names[0])): #each of these is a search result
-        for j in range(len(names)): #each of these is a feature
-            if names[j][i]:
-                if names[j][i] in results.keys():
-                    results[names[j][i]] += scores[j][i-1]
-                else:
-                    results.update({names[j][i]: scores[j][i-1]})
+
+    for i in range(len(names)): #each of these is a recid
+        if names[i]:
+            if names[i] in results.keys():
+                results[names[i]] += scores[i]
+            else:
+                results.update({names[i]: scores[i]})
     # we have combine all search results from various features, we need to sort and pick number_of_results_wanted highest
 
-    returnnames = list()
-    returndists = list()
+
     topnames = sorted(results, key=results.get, reverse=True)[0:number_of_results_wanted]
     topdists = sorted(results.values(), reverse=True)[0:number_of_results_wanted]
 
-    returnnames.extend([name for name in topnames])
-    returndists.extend([dist for dist in topdists])
+
+    returnnames = [name for name in topnames]
+    returndists = [dist for dist in topdists]
 
     return returnnames,returndists

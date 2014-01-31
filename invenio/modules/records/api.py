@@ -43,7 +43,9 @@ class Record(SmartJson):
 
     @classmethod
     def create(cls, blob, master_format, **kwargs):
-        reader = readers[master_format](blob, namespace='recordext', **kwargs)
+        if 'namespace' not in kwargs:
+            kwargs['namespace'] = 'recordext'
+        reader = readers[master_format](blob, **kwargs)
         return cls(reader.translate())
 
     @classmethod

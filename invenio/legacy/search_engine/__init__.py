@@ -160,7 +160,8 @@ from invenio.modules.search.views.search import getImageSimilarity, \
 from invenio.modules.image_similarity.image_similarity_search import find_similar_from_path, \
     find_similar_from_recid
 from invenio.modules.image_similarity.image_similarity_config import CFG_IMAGE_SIMILARITY_SIMILAR_SEARCH_ALGO, \
-    CFG_IMAGE_SIMILARITY_SIMILAR_NUM_RESULTS
+    CFG_IMAGE_SIMILARITY_SIMILAR_NUM_RESULTS, \
+    CFG_IMAGE_SIMILARITY_IMAGE_COLLECTIONS
 
 VIEWRESTRCOLL_ID = acc_get_action_id(VIEWRESTRCOLL)
 
@@ -5350,7 +5351,7 @@ def perform_request_search(req=None, cc=CFG_SITE_NAME, c=None, p="", f="", rg=CF
                                 recid=recid, recidb=recidb, sysno=sysno, id=id, idb=idb, sysnb=sysnb, action=action, d1=d1,
                                 d1y=d1y, d1m=d1m, d1d=d1d, d2=d2, d2y=d2y, d2m=d2m, d2d=d2d, dt=dt, verbose=verbose, ap=ap, ln=ln, ec=ec,
                                 tab=tab, wl=wl, em=em, process=process)
-
+    #import ipdb; ipdb.set_trace()
     return prs_perform_search(kwargs=kwargs, **kwargs)
 
 
@@ -5358,7 +5359,7 @@ def prs_perform_search(kwargs=None, **dummy):
     """Internal call which does the search, it is calling standard Invenio;
     Unless you know what you are doing, don't use this call as an API
     """
-    # separately because we can call it independently
+    # separately because we can call it independently    
     out = prs_wash_arguments_colls(kwargs=kwargs, **kwargs)
     if not out:
         return out
@@ -5484,6 +5485,11 @@ def prs_wash_arguments(req=None, cc=CFG_SITE_NAME, c=None, p="", f="", rg=CFG_WE
 
     _ = gettext_set_language(ln)
 
+
+    # import ipdb; ipdb.set_trace()
+    # if req.args['process'] is not None:
+    #     process = req.args['process']
+
     kwargs = {'req':req,'cc':cc, 'c':c, 'p':p, 'f':f, 'rg':rg, 'sf':sf, 'so':so, 'sp':sp, 'rm':rm, 'of':of, 'ot':ot, 'aas':aas,
               'p1':p1, 'f1':f1, 'm1':m1, 'op1':op1, 'p2':p2, 'f2':f2, 'm2':m2, 'op2':op2, 'p3':p3, 'f3':f3, 'm3':m3, 'sc':sc, 'jrec':jrec,
               'recid':recid, 'recidb':recidb, 'sysno':sysno, 'id':id, 'idb':idb, 'sysnb':sysnb, 'action':action, 'd1':d1,
@@ -5507,7 +5513,7 @@ def prs_search(kwargs=None, recid=0, req=None, cc=None, p=None, p1=None, p2=None
     search ended)
     """
 
-    if process is not None:
+    if process is not '':
         # send to image_similarity module (process is temp file name)                
         # send path to sim fct -> retrieve list of recids (we do this in prs_search_similar_records by sending path as process)
         output = prs_search_similar_records(kwargs=kwargs, **kwargs)
@@ -5638,7 +5644,8 @@ def prs_search_similar_records(kwargs=None, req=None, of=None, cc=None, pl_in_ur
                     f2=None, m2=None, op2=None, f3=None, m3=None, sc=None, pl=None,
                     d1y=None, d1m=None, d1d=None, d2y=None, d2m=None, d2d=None,
                     dt=None, jrec=None, ec=None, action=None, em=None,
-                    verbose=None, **dummy):
+                    verbose=None, process=None, **dummy):
+    
     if req and req.method != 'HEAD':
         page_start(req, of, cc, aas, ln, uid, _("Search Results"), p=create_page_title_search_pattern_info(p, p1, p2, p3),
                    em=em)
@@ -5647,7 +5654,7 @@ def prs_search_similar_records(kwargs=None, req=None, of=None, cc=None, pl_in_ur
                                     p2, f2, m2, op2, p3, f3, m3, sc, pl, d1y, d1m, d1d, d2y, d2m, d2d, dt, jrec, ec, action,
                                     em
                                     ))
-    if record_exists(p[6:]) != 1 and process is None:
+    if record_exists(p[6:]) != 1 and process is '':
         # record does not exist
         if of.startswith("h"):
             if req.method == 'HEAD':
@@ -5665,14 +5672,15 @@ def prs_search_similar_records(kwargs=None, req=None, of=None, cc=None, pl_in_ur
     else:
         # record well exists, so find similar ones to it        
         t1 = os.times()[4]
-        
-
-        if process is not None:
+        if process is not '':
             full_path_to_image = getImageSimilarity(process) # get full path to tmp file (in search/views/search.py fct getImageSimilarity(process) -> full path)
-            results_similar_recIDs, dummy, dummy = find_similar_from_path(full_path_to_image, CFG_IMAGE_SIMILARITY_SIMILAR_SEARCH_ALGO, CFG_IMAGE_SIMILARITY_SIMILAR_NUM_RESULTS) # call module with path
-        elif p[6:] in get_collection_reclist('Photos'): # change to CFG_IMG_SIM_COLLECTIONS 
+            results_similar_recIDs = find_similar_from_path(full_path_to_image, CFG_IMAGE_SIMILARITY_SIMILAR_SEARCH_ALGO, CFG_IMAGE_SIMILARITY_SIMILAR_NUM_RESULTS, newimage=True) # call module with path
+            #import ipdb; ipdb.set_trace()
+        elif int(p[6:]) in set().union(*[get_collection_reclist(image_collection) for image_collection in CFG_IMAGE_SIMILARITY_IMAGE_COLLECTIONS]): # change to CFG_IMG_SIM_COLLECTIONS 
             # invenio.bibrecord  if set(record_get_field(p[6:],'980').field_get_subfield_values())).intersection(set(CFG_IMG_SIM_COLLECTIONS)) not None:
-            results_similar_recIDs, dummy, dummy = find_similar_from_recid(p[6:], CFG_IMAGE_SIMILARITY_SIMILAR_SEARCH_ALGO, CFG_IMAGE_SIMILARITY_SIMILAR_NUM_RESULTS) # call module with recid
+            
+            results_similar_recIDs = find_similar_from_recid(p[6:], CFG_IMAGE_SIMILARITY_SIMILAR_SEARCH_ALGO, CFG_IMAGE_SIMILARITY_SIMILAR_NUM_RESULTS) # call module with recid            
+            #import ipdb; ipdb.set_trace()
         else:
             results_similar_recIDs, results_similar_relevances, results_similar_relevances_prologue, results_similar_relevances_epilogue, results_similar_comments = \
                                 rank_records_bibrank(rm, 0, get_collection_reclist(cc), string.split(p), verbose, f, rg, jrec)

@@ -174,7 +174,7 @@ class SmartJson(SmartDict):
             func = reduce(lambda obj, key: obj[key], \
                     self._dict['__meta_metadata__'][field]['function'], \
                     FieldParser.field_definitions(self['__meta_metadata__']['__additional_info__']['namespace']))
-            self._dict_bson[field] = try_to_eval(func, functions, self=self)
+            self._dict_bson[field] = try_to_eval(func, functions(self['__meta_metadata__']['__additional_info__']['namespace']), self=self)
         else:
             live_time = datetime.timedelta(0, self._dict['__meta_metadata__'][field]['memoize'])
             timestamp = datetime.datetime.strptime(self._dict['__meta_metadata__'][field]['timestamp'], "%Y-%m-%dT%H:%M:%S")
@@ -183,7 +183,7 @@ class SmartJson(SmartDict):
                 func = reduce(lambda obj, key: obj[key], \
                     self._dict['__meta_metadata__'][field]['function'], \
                     FieldParser.field_definitions(self['__meta_metadata__']['__additional_info__']['namespace']))
-                self._dict_bson[field] = try_to_eval(func, functions, self=self)
+                self._dict_bson[field] = try_to_eval(func, functions(self['__meta_metadata__']['__additional_info__']['namespace']), self=self)
                 if not old_value == self._dict_bson[field]:
                     #FIXME: trigger update in DB and fire signal to update others
                     pass

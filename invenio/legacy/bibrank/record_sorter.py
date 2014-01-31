@@ -167,6 +167,10 @@ def is_method_valid(colID, rank_method_code):
     If colID is None, then check for existence regardless of collection.
     """
 
+    #TO REMOVE
+    if rank_method_code == 'wrd':
+        return 1
+
     if colID is None:
         return run_sql("SELECT COUNT(*) FROM rnkMETHOD WHERE name=%s", (rank_method_code,))[0][0]
 
