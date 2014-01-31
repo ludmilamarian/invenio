@@ -1,0 +1,255 @@
+## Which methods have how many hits below threshold of min miss/second: (a miss is a search which resulted in an incorrect image, a second is the second closest match in the case of a successful retrieval)
+
+minimums
+Out[25]: 
+{'0': 7.8771028518676758,
+ '11': 0.38372227549552917,
+ '14': 409.0,
+ '3': 1.1560693979263306,
+ '5': 37.565898895263672}
+
+
+for feat in formin['Scale25.0']:
+    print feat
+    for typ in formin:
+        print typ
+        print 'num below min: ' + str((formax[typ][feat] < minimums[feat]).sum())
+    print '--'
+   ....: 
+11 
+Rotation5-Crop
+num below min: 3
+Rotation5
+num below min: 3
+Rotation20-Crop
+num below min: 1
+Dark
+num below min: 0
+Scale640.0
+num below min: 371
+Rotation20
+num below min: 0
+Crop0.2
+num below min: 1
+Crop0.1
+num below min: 8
+Scale25.0
+num below min: 359
+Scale50.0
+num below min: 378
+--
+0
+Rotation5-Crop
+num below min: 9
+Rotation5
+num below min: 8
+Rotation20-Crop
+num below min: 1
+Dark
+num below min: 14
+Scale640.0
+num below min: 400
+Rotation20
+num below min: 0
+Crop0.2
+num below min: 2
+Crop0.1
+num below min: 16
+Scale25.0
+num below min: 400
+Scale50.0
+num below min: 400
+--
+3
+Rotation5-Crop
+num below min: 2
+Rotation5
+num below min: 2
+Rotation20-Crop
+num below min: 1
+Dark
+num below min: 0
+Scale640.0
+num below min: 78
+Rotation20
+num below min: 0
+Crop0.2
+num below min: 0
+Crop0.1
+num below min: 4
+Scale25.0
+num below min: 71
+Scale50.0
+num below min: 273
+--
+5
+Rotation5-Crop
+num below min: 0
+Rotation5
+num below min: 0
+Rotation20-Crop
+num below min: 0
+Dark
+num below min: 380
+Scale640.0
+num below min: 65
+Rotation20
+num below min: 0
+Crop0.2
+num below min: 0
+Crop0.1
+num below min: 0
+Scale25.0
+num below min: 47
+Scale50.0
+num below min: 351
+--
+14
+Rotation5-Crop
+num below min: 0
+Rotation5
+num below min: 0
+Rotation20-Crop
+num below min: 0
+Dark
+num below min: 120
+Scale640.0
+num below min: 142
+Rotation20
+num below min: 0
+Crop0.2
+num below min: 2
+Crop0.1
+num below min: 19
+Scale25.0
+num below min: 218
+Scale50.0
+num below min: 293
+
+
+-----------------------
+SAME STATS BUT BY TYPE:
+-----------------------
+
+Rotation5-Crop
+11
+num below min: 3
+0
+num below min: 9
+3
+num below min: 2
+5
+num below min: 0
+14
+num below min: 0
+--
+Rotation5
+11
+num below min: 3
+0
+num below min: 8
+3
+num below min: 2
+5
+num below min: 0
+14
+num below min: 0
+--
+Rotation20-Crop
+11
+num below min: 1
+0
+num below min: 1
+3
+num below min: 1
+5
+num below min: 0
+14
+num below min: 0
+--
+Dark
+11
+num below min: 0
+0
+num below min: 14
+3
+num below min: 0
+5
+num below min: 380
+14
+num below min: 120
+--
+Scale640.0
+11
+num below min: 371
+0
+num below min: 400
+3
+num below min: 78
+5
+num below min: 65
+14
+num below min: 142
+--
+Rotation20
+11
+num below min: 0
+0
+num below min: 0
+3
+num below min: 0
+5
+num below min: 0
+14
+num below min: 0
+--
+Crop0.2
+11
+num below min: 1
+0
+num below min: 2
+3
+num below min: 0
+5
+num below min: 0
+14
+num below min: 2
+--
+Crop0.1
+11
+num below min: 8
+0
+num below min: 16
+3
+num below min: 4
+5
+num below min: 0
+14
+num below min: 19
+--
+Scale25.0
+11
+num below min: 359
+0
+num below min: 400
+3
+num below min: 71
+5
+num below min: 47
+14
+num below min: 218
+--
+Scale50.0
+11
+num below min: 378
+0
+num below min: 400
+3
+num below min: 273
+5
+num below min: 351
+14
+num below min: 293
+--
+
+

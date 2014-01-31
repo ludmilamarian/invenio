@@ -1,0 +1,9 @@
+Everything that is needed for the jcc call is here. Change path names accordingly.
+
+Notes on LIRE:
+--------------
+
+All the code is commented and each method is explained.
+See http://www.semanticmetadata.net/wiki/doku.php for the official documentation.
+Some interesting things I discovered when working with LIRE: Lucene indexes are not always up-to-date, they wait for enough changes to be made and then merge the incomplete segments. This is a problem if the index only contains a few entries, but otherwise is fine.
+

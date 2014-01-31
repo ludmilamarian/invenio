@@ -1,0 +1,26 @@
+sudo python -m jcc #call jcc
+
+#build wrapper for all public methods and classes in jars specified by --jar
+--jar /home/michael/PythonLire.jar 
+
+#include, in the wrapper, dependencies with methods in these jars. note: these cannot be called directly from wrapper, in python
+--include "/home/michael/JavaWorkspace/dermotte-liresolr-e04895343bf9/lib/lire.jar" 
+--include /home/michael/JavaWorkspace/LireDemoPerformance/lib/lucene-analyzers-common-4.2.1.jar 
+--include /home/michael/JavaWorkspace/LireDemoPerformance/lib/lucene-core-4.2.1.jar 
+ 
+#explicitly wrap these classes, these CAN be called in python (or at least their public methods)
+net.semanticmetadata.lire.ImageSearchHits 
+org.apache.lucene.document.Document 
+java.util.HashMap 
+
+#name your python package
+--python pylire 
+
+#make java type compatible with python's len() and variable[i] default methods
+--sequence net.semanticmetadata.lire.ImageSearchHits 'length:()I' 'doc:(I)Lorg/apache/lucene/document/Document;' 
+
+#make the get method for a class visible in the wrapper
+--mapping org.apache.lucene.document.Document 'get:(Ljava/lang/String;)Ljava/lang/String;' 
+
+#build and install python egg
+--build --install

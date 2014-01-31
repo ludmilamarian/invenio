@@ -1,0 +1,42 @@
+Notes on Image Features:
+------------------------
+
+
+Local Features: 
+---------------
+1)"PREPRINT February 25, 2013, An analysis and implementation of the SURF method, and its comparison to SIFT, Edouard Oyallon, Julien Rabin"
+
+8 Conclusion
+
+SURF seems to be mainly useful as a fast tracking algorithm, whose strengh is the use of box ﬁlters. One can rely on SURF when dealing with similar images to ﬁnd out quickly some correspondances. Nevertheless, when computation time is not fundamental, it appears clearly that SIFT outperforms SURF.
+
+
+---
+
+2) For algorithms similar to SIFT, see:
+http://www.scholarpedia.org/article/Scale_Invariant_Feature_Transform
+
+
+---
+
+3) SIFT open source implementation:
+http://www.vlfeat.org/
+
+"The VLFeat open source library implements popular computer vision algorithms including HOG, SIFT, MSER, k-means, hierarchical k-means, agglomerative information bottleneck, SLIC superpixels, and quick shift. It is written in C for efficiency and compatibility"
+
+
+---
+
+4) Alternative to BoVW: Fisher Vectors (has been seen to outperform BoVW)   
+
+
+---
+
+5) BoVW algorithm description for classifier:
+
+    Extract features from your entire training set.
+    Cluster those features into a vocabulary V; you get K distinct cluster centers.
+    Encode each training image as a histogram of the number of times each vocabulary element shows up in the image. Each image is then represented by a length-K vector.
+    Train the classifier.
+    When given a test image, extract the features. Now represent the test image as a histogram of the number of times each cluster center from V was closest to a feature in the test image. This is a length K vector again.
+

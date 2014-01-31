@@ -1,0 +1,9 @@
+You may want to change the config file in image_similarity module:
+- add some more features to similarity features list (COMBINE, STANDARD, and CLUE), check results by feature for which to take.
+- change index batch size (number of images sent to LIRE at a time)
+- all the paths, ex: path to indexes folder
+
+You may also want to start the java virtual machine with some parameters to increase, for example, its memory.
+
+The virtual machine (the code is in engine, pylire.initVM() ) , should be started once, and be always running in the background.
+

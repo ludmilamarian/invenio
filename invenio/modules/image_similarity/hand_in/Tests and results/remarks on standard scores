@@ -1,0 +1,169 @@
+In [4]: r = hitRateStandardized(h, 'Standardized') # these are standard scores w.r.t. the distribution of each query's top 50 hits, each query is using new mean and std
+Rotation5-Crop
+0.99706744868
+---
+Rotation5
+0.994236311239
+---
+Rotation20-Crop
+0.991202346041
+---
+Scale640.0
+1.0
+---
+Rotation20
+0.959654178674
+---
+Crop0.2
+0.9525
+---
+Crop0.1
+0.9975
+---
+Scale25.0
+1.0
+---
+Scale50.0
+1.0
+---
+
+In [5]: r = hitRateStandardized(h, 'PythonStandardized') # these are standard scores using all 400 queries' distribution to get approx of population mean and population std (although only using the top 50 hits from each query, not entire population)
+Rotation5-Crop
+0.876832844575
+---
+Rotation5
+0.850144092219
+---
+Rotation20-Crop
+0.410557184751
+---
+Scale640.0
+0.9925
+---
+Rotation20
+0.135446685879
+---
+Crop0.2
+0.755
+---
+Crop0.1
+0.935
+---
+Scale25.0
+0.9925
+---
+Scale50.0
+1.0
+---
+
+
+# Using python std and only features with >90% hits
+Out[8]: 
+{'Crop0.1': 0.9875,
+ 'Crop0.2': 0.9525,
+ 'Rotation20': 0.9538904899135446,
+ 'Rotation20-Crop': 0.9853372434017595,
+ 'Rotation5': 0.9942363112391931,
+ 'Rotation5-Crop': 0.9912023460410557,
+ 'Scale25.0': 0.9475,
+ 'Scale50.0': 1.0,
+ 'Scale640.0': 0.9925}
+
+
+
+
+In [13]: r80
+Out[13]: 
+{'Crop0.1': 0.995,
+ 'Crop0.2': 0.91,
+ 'Rotation20': 0.5360230547550432,
+ 'Rotation20-Crop': 0.8973607038123167,
+ 'Rotation5': 0.8847262247838616,
+ 'Rotation5-Crop': 0.9941348973607038,
+ 'Scale25.0': 0.985,
+ 'Scale50.0': 1.0,
+ 'Scale640.0': 1.0}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+In [12]: rjava
+Out[12]: 
+{'Crop0.1': 0.9975,
+ 'Crop0.2': 0.9525,
+ 'Rotation20': 0.9596541786743515,
+ 'Rotation20-Crop': 0.9912023460410557,
+ 'Rotation5': 0.9942363112391931,
+ 'Rotation5-Crop': 0.9970674486803519,
+ 'Scale25.0': 1.0,
+ 'Scale50.0': 1.0,
+ 'Scale640.0': 1.0}
+
+In [13]: r80
+Out[13]: 
+{'Crop0.1': 0.995,
+ 'Crop0.2': 0.91,
+ 'Rotation20': 0.5360230547550432,
+ 'Rotation20-Crop': 0.8973607038123167,
+ 'Rotation5': 0.8847262247838616,
+ 'Rotation5-Crop': 0.9941348973607038,
+ 'Scale25.0': 0.985,
+ 'Scale50.0': 1.0,
+ 'Scale640.0': 1.0}
+
+In [14]: r90
+Out[14]: 
+{'Crop0.1': 0.9875,
+ 'Crop0.2': 0.9525,
+ 'Rotation20': 0.9538904899135446,
+ 'Rotation20-Crop': 0.9853372434017595,
+ 'Rotation5': 0.9942363112391931,
+ 'Rotation5-Crop': 0.9912023460410557,
+ 'Scale25.0': 0.9475,
+ 'Scale50.0': 1.0,
+ 'Scale640.0': 0.9925}
+
+In [15]: rall
+Out[15]: 
+{'Crop0.1': 0.935,
+ 'Crop0.2': 0.755,
+ 'Rotation20': 0.13544668587896252,
+ 'Rotation20-Crop': 0.41055718475073316,
+ 'Rotation5': 0.8501440922190202,
+ 'Rotation5-Crop': 0.8768328445747801,
+ 'Scale25.0': 0.9925,
+ 'Scale50.0': 1.0,
+ 'Scale640.0': 0.9925}
+
+
+
+
