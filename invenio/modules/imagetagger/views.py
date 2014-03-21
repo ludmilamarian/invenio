@@ -18,26 +18,29 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 """
-    invenio.modules.imagetagger.blueprint
-    ------------------------------
+    invenio.modules.imagetagger.views
+    ---------------------------------
 
     Tagging interface.
 """
 
-import os
-import numpy as np
+#FIXME add user authentication!!!
+
 import cv2
-from werkzeug import LocalProxy
-from flask import render_template, request, flash, redirect, url_for, \
-    jsonify, Blueprint, json, escape
+import numpy as np
+import os
+
+from flask import (render_template, request, flash, 
+                   redirect, url_for, jsonify, Blueprint, 
+                   json, escape)
+from invenio.ext.sqlalchemy import db
 from invenio.ext.template import render_template_to_string
 from sqlalchemy.exc import SQLAlchemyError
-from invenio.ext.sqlalchemy import db
+from werkzeug import LocalProxy
 
-
-from .json_utils import *
+from .json_utils import * #FIXME don't use * import
 from .face_detection import find_faces
-from .imagetag import *
+from .imagetag import Imagetag
 from .models import ItgTAG
 from .CollectionHandler import CollectionHandler
 from .face_normalization import normalizeAndSave
@@ -48,11 +51,68 @@ import eigenfaces_model
 blueprint = Blueprint('imagetagger', __name__, url_prefix='/imagetagger',
                       template_folder='templates', static_folder='static')
 
+
+
+from invenio.modules.record.views import request_record
+from flask.ext.login import current_user, login_required
+
+@blueprint.route('/record/<int:recid>/edit',
+                 methods=['GET', 'POST'])
+@blueprint.route('/record/<int:recid>/edit/<int:docid>',
+                 methods=['GET', 'POST'])
+@login_required
+@request_record
+def edit(recid, docid=None):
+    pass
+
+
+@blueprint.route('/record/<int:recid>/create', methods=['GET', 'POST'])
+@blueprint.route('/record/<int:recid>/create/<int:docid>', 
+                 methods=['GET', 'POST'])
+@login_required
+@request_record
+def create(recid, docid=None):
+    pass
+
+
+@blueprint.route('/record/<int:recid>/delete', methods=['GET', 'POST'])
+@blueprint.route('/record/<int:recid>/delete/<int:docid>',
+                 methods=['GET', 'POST'])
+@login_required
+@request_record
+def delete(recid, docid=None):
+    """tag deleting (the whole tags for a photo)"""
+    where = {'id_bibrec': recid}
+    if docid is not None:
+        where['id_image'] = docid
+
+    db.session.query(ItgTAG).filter_by(**where).delete()
+    db.session.query(ItgNormalizedFace).filter_by(**where).delete()
+    db.session.query(ItgTAGJson).filter_by(**where).delete()
+    db.session.commit()
+    redirect(url_for(".create", recid=recid, docid=docid)
+
+
+
+@blueprint.route('/record/<int:recid>')
+@blueprint.route('/record/<int:recid>/<int:docid>')
+def view(recid, docid=None):
+    """request the json file from the DB"""
+    where = {'id_bibrec': recid}
+    if docid is not None:
+        where['id_image'] = docid
+
+    tag = ItgTAGJson.query.filter_by(**where).one_or_404()
+    return json.loads(tag.content)
+
+
+#FIXME this needs refactoring to allow multiple processes run the code
 ch = None
 actions = {0:'edit', 1:'create'}
 
-@blueprint.route('/record/<int:id_bibrec>/<int:id_image>/<int:action>', methods=['GET', 'POST'])
-@blueprint.route('/record/<int:id_bibrec>/<int:action>', methods=['GET', 'POST'])
+
+@blueprint.route('/record/<int:recid>/<int:id_image>/<int:action>', methods=['GET', 'POST'])
+@blueprint.route('/record/<int:recid>/<int:action>', methods=['GET', 'POST'])
 def editor(id_bibrec, action, id_image=-1, width=800):
     """edit or create interface for photo tagging
     width -- image width for display
@@ -149,33 +209,8 @@ def editor(id_bibrec, action, id_image=-1, width=800):
                     potential_tags = find_faces(full_path, width=width, already_tagged=suggestions)
                     return template_context_function(id_bibrec, path, faces=potential_tags, width=width, suggested=suggestions, action=action, current_url=current_url)
 
-@blueprint.route('/record/<int:id_bibrec>/delete', methods=['GET', 'POST'])
-@blueprint.route('/record/<int:id_bibrec>/<int:id_image>/delete', methods=['GET', 'POST'])
-def delete(id_bibrec, id_image=-1):
-    """tag deleting (the whole tags for a photo)"""
-    if id_image == -1:
-        db.session.query(ItgTAG).filter_by(id_bibrec=id_bibrec).delete()
-        db.session.query(ItgNormalizedFace).filter_by(id_bibrec=id_bibrec).delete()
-        db.session.query(ItgTAGJson).filter_by(id_bibrec=id_bibrec).delete()
-        redirect(url_for("./record/"+id_bibrec+"/1"))
-    else:
-        db.session.query(ItgTAG).filter_by(id_bibrec=id_bibrec).filter_by(id_image=id_image).delete()
-        db.session.query(ItgNormalizedFace).filter_by(id_bibrec=id_bibrec).filter_by(id_image=id_image).delete()
-        db.session.query(ItgTAGJson).filter_by(id_bibrec=id_bibrec).filter_by(id_image=id_image).delete()
-        redirect(url_for("./record/"+id_bibrec+"/"+id_image+"/1"))
 
-@blueprint.route('/record/<int:id_bibrec>/<int:id_image>')
-@blueprint.route('/record/<int:id_bibrec>')
-def get_tags_for_image(id_bibrec, id_image=-1):
-    """request the json file from the DB"""
-    if id_image == -1:
-        result = db.session.query(ItgTAGJson).filter_by(id_bibrec=id_bibrec)
-        for res in result:
-            return json.loads(res.content)
-    else:
-        result = db.session.query(ItgTAGJson).filter_by(id_bibrec=id_bibrec).filter_by(id_image=id_image)
-        for res in result:
-            return json.loads(res.content)
+
 
 @blueprint.route('/seedb')
 def seedb():
@@ -190,12 +225,14 @@ def seedb():
         text = text + "id"+ str(r.id)+","+str(r.id_bibrec)+","+r.content+"<br/>"
     return template_context_function(None, '', faces=[], suggested=[], text=text)
 
+
 @blueprint.route('/deletedb')
 def deletedb():
     db.session.query(ItgTAG).delete()
     db.session.query(ItgNormalizedFace).delete()
     db.session.query(ItgTAGJson).delete()
     return "deleted"
+
 
 def save_tags(id_bibrec, tags, action, id_image=-1):
     """tag saving in the DB: 
@@ -229,6 +266,7 @@ def save_tags(id_bibrec, tags, action, id_image=-1):
     db.session.flush()
     db.session.commit()
 
+
 def run_training(method):
     temp_dir = temp_training_dir
     if method == 0:
@@ -237,6 +275,3 @@ def run_training(method):
             eigenfaces_model.save_recognizer(temp_dir+'/eigen.xml')
     else:
         bayesian_model.run_training()
-	
-
-
