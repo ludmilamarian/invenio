@@ -44,11 +44,6 @@ list_cascades = [prefix+"15/"+"cascade"+method_cascades+"/cascade.xml", prefix+"
 temp_training_dir = "/home/cern/.virtualenvs/it/src/invenio/invenio/modules/imagetagger/static/ml"
 
 def get_path(id_record, id_image):
-    #return [f.get_full_path() for f in BibRecDocs(id_record).list_bibdocs()[0].list_latest_files() if f.subformat == '']
-    # from invenio.modules.records.models import Record as Bibrec
-    # record = Bibrec.query.get(id_record)
-    # print dir(record)
-    #return image_path, image_model_path
 	return fake_bibrec[id_image%len(fake_bibrec)], prefix+fake_bibrec[id_image%len(fake_bibrec)]
 
 def is_collection(id_record):
@@ -59,7 +54,6 @@ def is_collection(id_record):
 
 def get_image_list(id_collection):
     """returns image ids for a corresponding bib_rec"""
-    #return range(len(fake_bibrec))
     res = []
     for i in range(len(fake_bibrec)):
     	if len(res) == 0:

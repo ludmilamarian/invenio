@@ -21,21 +21,7 @@
 
 import os
 from flask import url_for, jsonify, json
-from .models import *
-
-
-def write_json(tags, path='/home/cern/.virtualenvs/it/src/invenio/invenio/modules/imagetagger/static/json/imagetagger/json.txt'):
-	"""function for testing"""
-	response = {}
-	for tag in tags:
-		response[str(tag.id)] = tag.to_json()
-	response2 = {}
-	response2['tags'] = response
-	result = jsonify([[0, response2]])
-	json_file = open(path, "w")
-	json_file.write(result.data)
-	json_file.close()
-	return result
+from .models import ItgTAGJson
 
 def to_json(record_id, tags_array):
 	"""tag list to json format"""
@@ -46,6 +32,7 @@ def to_json(record_id, tags_array):
 	response2['tags'] = response
 	result = jsonify([[record_id, response2]])
 	return result
+	
 
 def get_json(id_bibrec, id_image=-1):
 	from invenio.ext.sqlalchemy import db
@@ -57,28 +44,6 @@ def get_json(id_bibrec, id_image=-1):
 		return json.loads(json_string[0].content)
 	else:
 		return []
-
-def read_json(path='/home/cern/.virtualenvs/invenionext/src/invenio/invenio/modules/imagetagger/static/json.txt'):
-	"""function for testing"""
-	try:
-		json_file = open(path, 'r')
-	except IOError:
-		print "oups"
-	strj = json.loads(json_file.read())
-	return strj
-
-def json_exists(path='/home/cern/.virtualenvs/invenionext/src/invenio/invenio/modules/imagetagger/static/json.txt'):
-	"""function for testing"""
-	try:
-		open(path)
-	except IOError:
-		return False
-	return True
-
-def json_remove(path):
-	"""function for testing"""
-	if os.path.isfile(path):
-		os.remove(path)
 
 
 def json_to_array(tags, image_width=0):

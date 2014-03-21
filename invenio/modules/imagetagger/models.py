@@ -88,11 +88,6 @@ class ItgTAGJson(db.Model):
 
     content = db.Column(db.String(10000),
                      nullable=False)
-					 
-    title = db.Column(db.String(255),
-                     nullable=False,
-                     server_default='',
-                     index=True)
 
     bibrec = db.relationship(Bibrec,
                              backref=db.backref('json_tags_association',
@@ -122,6 +117,10 @@ class ItgNormalizedFace(db.Model):
     content = db.Column(db.LargeBinary,
                      nullable=False)
 
+    title = db.Column(db.String(255),
+                     nullable=False,
+                     server_default='',
+                     index=True)
     # bibrec = db.relationship(Bibrec,
     #                          backref=db.backref('json_tags_association',
     #                                             cascade='all'))

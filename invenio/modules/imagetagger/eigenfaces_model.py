@@ -22,6 +22,8 @@
 	see Lawrence Sirovich and Michael Kirby. Low-dimensional procedure for the characterization of human faces.
 """
 
+import cv2
+import cv2.cv as cv
 from eigenfaces import *
 from face_normalization import normalizeFor
 from invenio.ext.sqlalchemy import db

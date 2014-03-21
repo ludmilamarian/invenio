@@ -27,8 +27,8 @@
 from invenio.ext.sqlalchemy import db
 from .models import ItgTAG
 from .face_in_collection_similarity import find_faces_in_collection
-from .imagetag import *
-from .suggestion import *
+from .imagetag import Imagetag
+from .suggestion import Suggestion
 import eigenfaces_model
 import bayesian_model
 from .face_normalization import normalizeFor

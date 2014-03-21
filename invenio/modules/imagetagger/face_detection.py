@@ -24,7 +24,7 @@ import cv2
 import cv2.cv as cv
 import numpy as np
 import math
-from .utils import list_cascades
+from .utils import list_cascades, path_frontal
 
 cascades = None
 
@@ -86,7 +86,7 @@ def format_result(result, image_width, fixed_width):
 		ind += 1
 	return tags
 
-def find_faces(path_to_image, width, path_to_cascade = '/home/cern/Downloads/opencv-2.4.6.1/data/haarcascades/haarcascade_frontalface_alt2.xml', already_tagged=[]):
+def find_faces(path_to_image, width, path_to_cascade = path_frontal, already_tagged=[]):
 	"""whole face detection process"""
 	image = cv2.imread(path_to_image)
 	print path_to_image

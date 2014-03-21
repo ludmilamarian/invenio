@@ -92,7 +92,7 @@ def get_possibilities(possibilities, tempDir):
 		result = db.session.query(ItgNormalizedFace).filter_by(id_tag=possibility)
 		for res in result:
 			write_image(tempDir, res.content, res.id_tag)
-			image_list.append(os.path.join(directory, str(id)+".sfi"))
+			image_list.append(os.path.join(tempDir, str(id)+".sfi"))
 			break
 	return image_list
 		
@@ -103,6 +103,6 @@ def predict(image, n, tempDir):
 	2) find the best choice among these n using the bayesian method
 	"""
 	possibilities = eigenfaces_model.predict(image, n)
-	result = bayesian_recognizer.predict(image, get_possibilities(possibilities))
+	result = bayesian_recognizer.predict(image, get_possibilities(possibilities, tempDir))
 	clean_directory(tempDir)
 	return possibilities[0][result]

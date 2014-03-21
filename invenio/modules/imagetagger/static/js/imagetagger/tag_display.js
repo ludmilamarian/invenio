@@ -310,10 +310,7 @@ var hideTags = function(){
 var sendTags = function(){
     var form = document.createElement("form");
     form.setAttribute("method", "post");
-    var ac = '';
-    if(action != -1)
-        ac = '/'+action;
-    form.setAttribute("action", "/imagetagger"+current_url+ac);
+    //form.setAttribute("action", "/imagetagger"+current_url+ac);
     nb_tags2 = 0;
     for(var i in tags){
         var tag = tags[i];

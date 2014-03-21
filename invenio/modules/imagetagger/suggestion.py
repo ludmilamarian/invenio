@@ -20,7 +20,7 @@
 import cv2
 import cv2.cv as cv
 import numpy as np
-from imagetag import *
+from imagetag import Imagetag
 
 class Suggestion:
 	def __init__(self, tag, distance, src):

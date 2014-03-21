@@ -24,7 +24,7 @@
 import sys
 import numpy as np
 import cv2
-from .imagetag import *
+from .imagetag import Imagetag
 from .suggestion import Suggestion
 from .utils import get_path, th_torso, path_frontal
 import cv2.cv as cv
@@ -180,7 +180,10 @@ def to_tab_format(title, tag, w, h, resize):
 	return [0,title,rect[0]*resize,rect[1]*resize,rect[2]*resize,rect[3]*resize,rect[3]*resize+5]
 
 def find_faces_in_collection(current_image, current_tags, collection, torso_path, final_width, suggestion=False, collection_id=''):
-	"""formatting for several tags and several images to study"""
+	"""formatting for several tags and several images to study
+		@param current_image: <insert explanation here> 
+		@param current_tags: 
+	"""
 	tags = {}
 	hsv_model = cv2.cvtColor(cv2.imread(current_image), cv2.COLOR_BGR2HSV)
 	resize = float(final_width)/float(hsv_model.shape[1])
