@@ -41,6 +41,7 @@ class ItgTAG(db.Model):
                           nullable=False,
                           index=True)
     id_image = db.Column(db.Integer(15, unsigned=True), nullable=False)
+	#x, y: coordinates of the upper left corner of the rectangle
     x = db.Column(db.Integer(5, unsigned=True), 
     				nullable=False)
     y = db.Column(db.Integer(5, unsigned=True), 
@@ -53,6 +54,7 @@ class ItgTAG(db.Model):
                      nullable=False,
                      server_default='',
                      index=True)
+	#width of the image at the time when the tag has been detected
     image_width = db.Column(db.Integer(5, unsigned=True), 
     				nullable=False)
     tag_type = db.Column(db.Integer(1, unsigned=True), 
@@ -121,9 +123,6 @@ class ItgNormalizedFace(db.Model):
                      nullable=False,
                      server_default='',
                      index=True)
-    # bibrec = db.relationship(Bibrec,
-    #                          backref=db.backref('json_tags_association',
-    #                                             cascade='all'))
 
     itgtag = db.relationship(ItgTAG,
                              backref=db.backref('face tag association',

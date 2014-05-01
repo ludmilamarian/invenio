@@ -44,16 +44,18 @@ list_cascades = [prefix+"15/"+"cascade"+method_cascades+"/cascade.xml", prefix+"
 temp_training_dir = "/home/cern/.virtualenvs/it/src/invenio/invenio/modules/imagetagger/static/ml"
 
 def get_path(id_record, id_image):
+	"""retrieve the relative path and the full path of an image"""
 	return fake_bibrec[id_image%len(fake_bibrec)], prefix+fake_bibrec[id_image%len(fake_bibrec)]
 
 def is_collection(id_record):
+	"""return true if a record contains several images"""
     if id_record == 1:
         return False 
     else:
         return True
 
 def get_image_list(id_collection):
-    """returns image ids for a corresponding bib_rec"""
+    """return image ids for a corresponding bib_rec"""
     res = []
     for i in range(len(fake_bibrec)):
     	if len(res) == 0:

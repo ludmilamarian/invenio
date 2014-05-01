@@ -32,12 +32,15 @@ from .utils import path_eyes
 eye_cascade = None
 
 def open_cascade(path=path_eyes):
+	"""open the face detector from a path to the xml file describing the model"""
 	global eye_cascade
 	eye_cascade = cv2.CascadeClassifier(path)
 
 
 def find_eyes(gray):
-	"""eye detection that filters false detections and find which rectangles are the left and right eyes"""
+	"""eye detection that filters false detections and find which rectangles are the left and right eyes
+	gray -- grayscale image
+	"""
 	percentage_area = 0.5
 	if eye_cascade == None:
 		open_cascade()
@@ -76,6 +79,7 @@ def readNormalizedFile(path):
 	return content
 
 def check_format(image):
+	"""The bayesian api only accepts pgm images so we need to check and convert"""
 	if image[-3:] != 'pgm':
 		img = cv2.imread(image, 0)
 		cv2.imwrite(image[:-4]+".pgm", img)
@@ -84,7 +88,11 @@ def check_format(image):
 	
 def normalizeFor(imagePath, outputPath, tag, type, is_db=True):
 	"""normalization
-	type -- recognizing method (the output format is different depending on the method)
+	imagePath -- path to the image to normalize (this is the whole image, we need to specifiy the face position with the param tag)
+	outputPath -- path to the normalized image that will be created
+	tag -- rectangle [x, y, w, h] specifying the face position
+	type -- recognizing method (the output format is different depending on the method, bayesian or eigenfaces)
+	is_db -- format matter, if true tag is of the type ItgTAG, if false it is of the type Imagetag
 	"""
 
 	imagePath = check_format(imagePath)
@@ -96,7 +104,6 @@ def normalizeFor(imagePath, outputPath, tag, type, is_db=True):
 	else:
 		factor = float(w) / float(tag.image_width)
 		face = gray[int(tag.y*factor):int((tag.y+tag.h)*factor),int(tag.x*factor):int((tag.x+tag.w)*factor)]
-	#cv2.imwrite("/home/cern/Downloads/faceface.jpg", face)
 	right, left = find_eyes(face)
 	if len(right) > 1:
 		print 'outpath',outputPath
@@ -105,7 +112,13 @@ def normalizeFor(imagePath, outputPath, tag, type, is_db=True):
 	return False
 
 def normalizeAndSave(imagePath, tempOutputDir, tag, id_bibrec, id_image):
-	"""called after a new tag: the face is cut, normalized and saved in the DB"""
+	"""called after a new tag is added to the DB: the face is cut, normalized and saved in the DB
+	imagePath -- path to the image containing the face to normalize
+	tempOutputDir -- temporary directory where to write the normalized face
+	tag -- position of the face in the image
+	id_bibrec -- record id
+	id_image -- image id
+	"""
 	gray = cv2.imread(imagePath, 0)
 	h, w = gray.shape[:2]
 	factor = float(w) / float(tag.image_width)

@@ -28,7 +28,7 @@ from invenio.ext.sqlalchemy import db
 from invenio.ext.template import render_template_to_string
 from sqlalchemy.exc import SQLAlchemyError
 
-from .json_utils import * #FIXME don't use * import
+from .json_utils import to_json, get_json, json_to_array
 from .face_detection import find_faces
 from .imagetag import Imagetag
 from .models import ItgTAG
@@ -44,6 +44,10 @@ def save_tags(id_bibrec, tags, id_image=-1):
 	each separately
 	+a json file per image
 	+if it's a face: the normalized face (for training)
+	
+	id_bibrec -- record id
+	tags -- array of Imagetag objects
+	id_image -- image id in the case id_bibrec represents a collection
 	"""
     if id_image == -1:
         id_image = id_bibrec
@@ -64,6 +68,7 @@ def save_tags(id_bibrec, tags, id_image=-1):
 
 
 def run_training(method):
+	"""run training on DB tags using one of the two methods"""
     temp_dir = temp_training_dir
     if method == 0:
         res = eigenfaces_model.run_training()

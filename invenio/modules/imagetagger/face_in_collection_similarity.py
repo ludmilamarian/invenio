@@ -181,8 +181,15 @@ def to_tab_format(title, tag, w, h, resize):
 
 def find_faces_in_collection(current_image, current_tags, collection, torso_path, final_width, suggestion=False, collection_id=''):
 	"""formatting for several tags and several images to study
-		@param current_image: <insert explanation here> 
-		@param current_tags: 
+	
+		current_image -- path to the image in which the faces were tagged (represented by current_tags)
+		current_tags -- list of tags that were squared in current_image and that we want to find in collection
+			format: list of suggestion objects if it comes from the CollectionHandler, array [id, title, x, y, w, h, h+5, type, image_width] otherwise
+		collection -- list of images ids in which we want to try to find the current_tags
+		torso_path -- path to the torso model (statistic model for defining the position of the upper body regarding to the head), see torso1.jpg in the static folder
+		final_width -- param used for scaling the suggestions for the tags that we return
+		suggestion -- boolean indicating if we are inside the CollectionHandler (different way of encapsulating a tag)
+		collection_id -- current collection id (used to fetch the path to the images using the function get_path defined in utils.py)
 	"""
 	tags = {}
 	hsv_model = cv2.cvtColor(cv2.imread(current_image), cv2.COLOR_BGR2HSV)

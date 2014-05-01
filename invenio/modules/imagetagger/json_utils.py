@@ -24,7 +24,11 @@ from flask import url_for, jsonify, json
 from .models import ItgTAGJson
 
 def to_json(record_id, tags_array):
-	"""tag list to json format"""
+	"""tag list to json format
+	
+	record_id -- bibrec id
+	tags_array -- array of Imagetag objects
+	"""
 	response = {}
 	for tag in tags_array:
 		response[str(tag.id)] = tag.to_json()
@@ -35,6 +39,7 @@ def to_json(record_id, tags_array):
 	
 
 def get_json(id_bibrec, id_image=-1):
+	"""get the json file corresponding to the record and image ids"""
 	from invenio.ext.sqlalchemy import db
 	if id_image != -1:
 		json_string = db.session.query(ItgTAGJson).filter_by(id_bibrec=id_bibrec).filter_by(id_image=id_image).all()
@@ -47,7 +52,13 @@ def get_json(id_bibrec, id_image=-1):
 
 
 def json_to_array(tags, image_width=0):
-	"""json format to tag list for html display"""
+	"""json format to tag list for html display
+	
+	tags -- json content retrieved from the DB
+	image_width -- width of the image that is about to be displayed
+	
+	returns an array of arrays of the form [id, title, x, y, w, h, h+5, type, image_width]
+	"""
 	if len(tags) == 0:
 		return []
 	result = []

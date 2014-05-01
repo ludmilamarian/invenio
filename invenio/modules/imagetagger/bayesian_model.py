@@ -35,6 +35,7 @@ bayesian_recognizer = BayesianRecognizer()
 
 def load_recognizer(pathIntra, pathExtra, pathEigen):
 	"""load an already trained model from files:
+	
 	pathIntra -- intrapersonal subspace file
 	pathExtra -- extrapersonal subspace file
 	pathEigen -- eigenfaces model file
@@ -45,19 +46,29 @@ def load_recognizer(pathIntra, pathExtra, pathEigen):
 	return res
 
 def save_recognizer(pathIntra, pathExtra, pathEigen):
-	"""save model after training"""
+	"""save model after training
+	
+	pathIntra -- path for saving the information about the intrapersonal subspace
+	pathExtra -- path for saving the information about the extrapersonal subspace
+	pathEigen -- path for saving the Eigenfaces model
+	"""
 	bayesian_recognizer.save(pathIntra, pathExtra)
 	eigenfaces_model.save_recognizer(pathEigen)
 
 def write_image(directory, content, id):
-	"""write the content stored in the DB in a file for training"""
+	"""write the content stored in the DB in a file for training
+	
+	directory -- directory where to put the temporary images that need to be converted
+	content -- DB content see class ItgNormalizedFace
+	id -- tag id
+	"""
 	path = os.path.join(directory, str(id)+".sfi")
 	file = open(path, "w")
 	file.write(content)
 	file.close()
 	
 def clean_directory(directory):
-	"""erase all the temporary files"""
+	"""erase all the temporary files, clean the directory"""
 	for the_file in os.listdir(directory):
 		file_path = os.path.join(directory, the_file)
 		try:
@@ -68,6 +79,7 @@ def clean_directory(directory):
 	
 def run_training(tempDir):
 	"""training of the recognizer using the faces tagged previously
+	
 	tempDir -- temporary directory for writing normalized images
 	"""
 	description_file = open(os.path.join(tempDir, "imageList.txt"), "w")
@@ -86,6 +98,9 @@ def run_training(tempDir):
 def get_possibilities(possibilities, tempDir):
 	"""the Eigenfaces method retrieves the tag id of the first n best choices
 	this method gets the normalized corresponding face from the DB
+	
+	possibilities -- output of the Eigenfaces.predict, a list of tag ids
+	tempDir -- temporary directory for writing normalized faces and pass it to the Bayesian recognizer
 	"""
 	image_list = []
 	for possibility in possibilities[0]:
@@ -99,8 +114,12 @@ def get_possibilities(possibilities, tempDir):
 
 def predict(image, n, tempDir):  
 	"""face recognition based on machine learning
-	1) get the n best choices using the eigenfaces method
-	2) find the best choice among these n using the bayesian method
+	1) get the n best choices using the Eigenfaces method
+	2) find the best choice among these n using the Bayesian method
+	
+	image -- image in which we want to recognize faces (using previous tags from the DB)
+	n -- number of possibilities we want to use from the Eigenfaces method
+	tempDir -- temporary directory for writing the normalized faces and pass it to the Bayesian model
 	"""
 	possibilities = eigenfaces_model.predict(image, n)
 	result = bayesian_recognizer.predict(image, get_possibilities(possibilities, tempDir))

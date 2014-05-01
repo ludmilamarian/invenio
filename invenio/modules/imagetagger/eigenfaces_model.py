@@ -18,7 +18,7 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 """
-	Face recognition based on eigenfaces, using amodified version of opencv's implementation
+	Face recognition based on Eigenfaces, using a modified version of opencv's implementation
 	see Lawrence Sirovich and Michael Kirby. Low-dimensional procedure for the characterization of human faces.
 """
 
@@ -42,6 +42,7 @@ def save_recognizer(path):
 	eigenfaces_recognizer.save(path)
 
 def check_format(image):
+	"""the recognizer needs pgm files, if not to pgm format, write a pgm copy"""
 	if image[-3:] != 'pgm':
 		img = cv2.imread(image, 0)
 		cv2.imwrite(image[:-4]+".pgm", img)

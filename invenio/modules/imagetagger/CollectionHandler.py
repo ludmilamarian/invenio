@@ -42,11 +42,23 @@ face_detector = cv2.CascadeClassifier(path_frontal)
 class CollectionHandler:
 	"""class for handling a collection of images
 	contains:
-		list of tagged and not yet tagged images
-		suggestions of tags for the untagged images
-		data for the recognizers
+		untagged -- list of untagged images
+		tagged -- images that have been tagged by the user
+		collection_id -- the bibrec id
+		tag_list -- dictionary, indexed by image id, containing an array of Imagetag, these are the tags entered by the user
+		suggestion_list -- dictionary, indexed by image id, containing an array of Imagetag, these are the tags obtained using face recognition
+		torso_path -- path to the torso model used for recognition with clothes
+		image_width -- width of the display in the tagging interface
+		with_ml -- boolean indicating if the initialization of the machine learning algorithm went well (i.e. if there is enough data in the DB to train them)
 	"""
 	def __init__(self, image_list=[], collection_id="", torso_path=path_torso, image_width=800):
+		""" object initialization
+		
+		image_list -- array of image id
+		collection_id -- bibrec id
+		torso_path -- path to the torso model used for recognition with clothes
+		image_width -- width of the display in the tagging interface
+		"""
 		if len(image_list) > 0:
 			self.untagged = image_list
 			self.tagged = []
@@ -64,9 +76,11 @@ class CollectionHandler:
 		
 	def init_ml_recognizer(self, path1, path2="", path3="", method="eigen"):
 		"""load the recognizers from file
+		
 		path1 -- path to the eigenfaces model file
 		path2 -- path to the bayesian intrapersonal file
 		path3 -- path to the bayesian extrapersonal file
+		method -- recognizing method
 		"""
 		if method == "eigen":
 			from eigenfaces_model import load_recognizer
@@ -76,7 +90,7 @@ class CollectionHandler:
 			return load_recognizer(path1, path2, path3)
 
 	def fetch_tags_in_db(self):
-		"""get the tags for the collection"""
+		"""get the tags for the collection that were previously entered by the user and saved in the DB"""
 		tags = db.session.query(ItgTAG).filter_by(id_bibrec=self.collection_id)
 		for tag in tags:
 			if str(tag.id_image) not in self.tagged:
@@ -93,6 +107,7 @@ class CollectionHandler:
 			self.suggest_with_collection(image, self.tag_list[image])
 
 	def suggest(self):
+		"""suggest tags using machine learning methods for frontal faces and clothes for not frontal faces"""
 		if self.with_ml:
 			self.suggest_with_ml()
 		self.suggest_with_collection()
@@ -131,7 +146,7 @@ class CollectionHandler:
 							self.suggestion_list[image] = Suggestion(Imagetag(tag_id=-1,tag_type="face",title=dbTag.title,x=face[0],y=face[1],w=face[2],h=face[3],image_width=w), 0, dbTag.id)
 
 	def suggest_one_image(self, image, width):
-		"""Static method for suggestion in one single image"""
+		"""method for suggestion in one single image, not a collection"""
 		self.init_ml_recognizer(epath, bpath[0], bpath[1], method)
 		
 		if method == "eigen":
@@ -160,6 +175,7 @@ class CollectionHandler:
 		return result
 
 	def to_path_list(self, id_list):
+		"""convert a list of image ids to a list of paths to these images"""
 		result = []
 		for id_image in id_list:
 			path, full_path = get_path(self.collection_id, id_image)
@@ -170,7 +186,11 @@ class CollectionHandler:
 		return result
 					
 	def suggest_with_collection(self, id_image=-1, tag_list=[]):
-		"""suggestion using the tagged pictures and the tag list of this collection"""
+		"""suggestion using the tagged pictures and the tag list of this collection, it uses clothes similarity
+		
+		id_image -- image where the tags come from, if -1, explore all the images that were tagged (using self.tagged)
+		tag_list -- list of tags to recognize
+		"""
 		if int(id_image) == -1 and self.with_ml: #no new tags added, we are using ml suggestions and propagate them to profile faces
 			temp = self.suggestion_list.copy()
 			for image in temp.keys():
@@ -213,7 +233,10 @@ class CollectionHandler:
 
 	def add(self, tags, id_image):
 		"""called when an image has been tagged and saved
-		propagate the suggestion to the untagged photos
+		propagate the suggestion to the untagged photos using clothes similarity
+		
+		tags -- new tags
+		id_image -- image that has been tagged
 		"""
 		if str(id_image) in self.untagged:
 			new_tags = tags
@@ -234,7 +257,10 @@ class CollectionHandler:
 		return result
 
 	def get_suggestions(self, id_image=-1):
-		"""called when an image is about to be tagged by the user"""
+		"""called when an image is about to be tagged by the user
+		retrieves the array of Imagetag corresponding to id_image
+		if id_image is -1, the whole suggestion list is returned
+		"""
 		if int(id_image) == -1:
 			return self.suggestion_list;
 		if str(id_image) in self.suggestion_list.keys():

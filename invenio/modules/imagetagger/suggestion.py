@@ -23,6 +23,12 @@ import numpy as np
 from imagetag import Imagetag
 
 class Suggestion:
+	""" class used in CollectionHandler, associates a tag with its source and its measure of confidence
+	
+	tag -- Imagetag object
+	distance -- value returned using the recognition method (either bayesian, eigenfaces or recognition from clothes)
+	src -- source of the suggestion (machine learning methods or clothes comparison methods
+	"""
 	def __init__(self, tag, distance, src):
 		self.tag = tag
 		self.distance = distance

@@ -1,13 +1,23 @@
+//number of current tags
 var nb_tags = -1;
+//number of faces (from detection and recognition)
 var nb_faces = 0;
+//array of tags, indexed by id and filled with Tag() (see bellow)
 var tags = new Array();
+//array of suggested tags
 var faces = new Array();
+//current face (when about to be edited)
 var current_face = -1;
+//current tag (when about to be edited)
 var current_tag = -1;
+//boolean to know if the item currently edited is a suggestion or a tag
 var isFace = false;
+//title previously entered and about to be edited
 var current_title = '';
+//ids of the different blocks that compose the html tagging interface
 var class_ids = {'image': '#imageMap', 'mapper': '#mapper', 'tag': ".tagged", 'tag_box': '.tagged_box', 'tag_title': '.tagged_title', 'tag_type': '.type', 'face': '.tagged2', 'delete': '.delete', 'add_panel': '#form_panel_add', 'modif_panel': '#form_panel_modify', 'tag_block': '#planetmap'}
 
+//tag class
 function Tag(id, title, x, y, w, h, type){
     this.id = id;
     this.title = title;
@@ -18,6 +28,9 @@ function Tag(id, title, x, y, w, h, type){
     this.type = type;
 }
 
+/******
+difference between tag and face: a face is a suggestion, either coming from the face detectors or coming from the face recognizers, a tag is an information entered by the user
+******/
 $(document).ready(function() {  
     
     var get_image_width = function(){
@@ -208,7 +221,7 @@ $(class_ids['face']).live("click",function(){
 
 });
 
-//called after the tag creation form desappears
+//called after the tag creation form disappears
 var addTag = function(){
     var position = $(class_ids['mapper']).position();
 

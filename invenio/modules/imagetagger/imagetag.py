@@ -27,7 +27,19 @@
 from .models import ItgTAG
 
 class Imagetag:
+	""" class for tags represented as rectangles with their top left corner and their height and width"""
 	def __init__(self, tag_id=0, tag_type=0, title=0, x=0, y=0, w=0, h=0, image_width=0, array=[], db_object=None):
+		""" Object initialization
+		tag_id -- id of the tag in the DB
+		tag_type -- type of the tag (face, object, other)
+		title -- name of the tag
+		x, y -- coordinates of the top left corner of the rectangle
+		w -- width of the rectangle
+		h -- height of the rectangle
+		image_width -- width of the image in which the tag was detected (used for scaling)
+		array -- other way of instantiating an object if it's coming from a form or from an openCV detection
+		db_object -- other way of instantiating if the tag comes from the DB (type: ItgTAG)
+		"""
 		if db_object is not None:
 			self.id = db_object.id
 			self.title = db_object.title
@@ -40,7 +52,7 @@ class Imagetag:
 			self.id_image = int(db_object.id_image)
 		else:
 			if len(array) > 0:
-				if len(array) > 4:
+				if len(array) > 4: #init coming from a form
 					self.id = tag_id
 					self.title = array[0]
 					self.x = int(array[1])
@@ -49,7 +61,7 @@ class Imagetag:
 					self.h = int(array[4])
 					self.type = array[5]
 					self.image_width = int(array[6])
-				else:
+				else:#init coming from an openCV detection
 					self.id = -1
 					self.title = ''
 					self.x = int(array[0])
@@ -76,13 +88,16 @@ class Imagetag:
 		 and self.h == int(tag2.h*factor)
 
 	def to_array(self, image_width=0):
+		""" convert to array for passing to the html overlay """
 		factor =1
 		if image_width != 0 and image_width != self.image_width:
 			factor = float(image_width)/float(self.image_width)
 		return [self.id, self.title, self.x, self.y, self.w, self.h, self.h+5, self.type, self.image_width]
 
 	def to_json(self):
+		""" json encoding """
 		return {'id':self.id, 'title':self.title, 'x':self.x, 'y':self.y, 'w':self.w, 'h':self.h, 'type':self.type, 'image_width':self.image_width}
 
 	def to_opencv(self, factor=1):
+		""" openCV format (the same as the one returned by a face detection """
 		return [int(self.x*factor), int(self.y*factor), int(self.w*factor), int(self.h*factor)]
