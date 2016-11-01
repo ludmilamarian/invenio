@@ -94,6 +94,7 @@ provision_web_ubuntu12 () {
           python-h5py \
           python-libxml2 \
           python-libxslt1 \
+          python-mysqldb \
           python-nose \
           python-nosexcover \
           python-pip \
@@ -167,6 +168,7 @@ provision_web_ubuntu14 () {
           python-h5py \
           python-libxml2 \
           python-libxslt1 \
+          python-mysqldb \
           python-nose \
           python-nosexcover \
           python-pip \
