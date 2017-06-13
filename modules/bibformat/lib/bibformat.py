@@ -314,13 +314,13 @@ def create_contributors_tex(recIDs, req=None):
         contributors = bfo.fields('100') + bfo.fields('700')
 
         # Find all the possible affiliations
-        affiliations = set()
+        affiliations = []
 
         # Add all unique affiliations
         for contributor in contributors:
-            affiliations.add(contributor.get('u'))
-        # Make a list
-        affiliations = list(affiliations)
+            affiliation = contributor.get('u')
+            if affiliation not in affiliations:
+                affiliations.append(affiliation)
 
         # Generate the contributors list
         contributors_list = []
