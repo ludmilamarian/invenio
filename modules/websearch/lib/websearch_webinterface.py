@@ -310,6 +310,17 @@ class WebInterfaceRecordPages(WebInterfaceDirectory):
         elif record_status == -1:
             req.status = apache.HTTP_GONE ## The record is gone!
 
+        # Check if the current record has been migrated to another system
+        # Requires 'MIGRATED' in 980__c and 970__d with the new URL
+        recid = argd['recid']
+        statuses = get_fieldvalues(recid, '980__c')
+        if 'MIGRATED' in statuses:
+            # Redirect to the new URL (if it exists)
+            new_url = get_fieldvalues(recid, '970__d')
+            if new_url:
+                url = new_url.pop()
+                redirect_to_url(req, url)
+
         # mod_python does not like to return [] in case when of=id:
         out = perform_request_search(req, **argd)
         if isinstance(out, intbitset):

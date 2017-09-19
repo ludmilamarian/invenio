@@ -28,11 +28,20 @@ from invenio.config import \
 
 def format_element(bfo, with_ln="yes"):
     """
-    Prints the record URL.
+    Prints the record URL or the redirected URL.
+
+    If the record has 980__c:MIGRATED and a URL in 970__d (which means that
+    the record was migrated to a new system), then instead of printing the
+    URL inside the current system, we return that new URL.
 
     @param with_ln: if "yes" include "ln" attribute in the URL
     """
-    url = CFG_SITE_URL + "/" + CFG_SITE_RECORD + "/" + bfo.control_field('001')
+    url = ''
+    statuses = bfo.fields('980__c')
+    if 'MIGRATED' in statuses:
+        url = bfo.field('970__d')
+    if not url:
+        url = CFG_SITE_URL + "/" + CFG_SITE_RECORD + "/" + bfo.control_field('001')
 
     if with_ln.lower() == "yes":
         url += "?ln=" + bfo.lang
