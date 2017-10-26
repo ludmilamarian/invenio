@@ -80,22 +80,6 @@ def format_element(
         sciencewise_p = True
         sitelist.remove('sciencewise')
 
-    google_plusone_p = False
-    if "google_plusone" in sitelist:
-        google_plusone_p = True
-        google_plusone_button = """
-<div id="bookmark_googleplus">
-    <div class="g-plusone" data-size="small" data-annotation="none"></div>
-</div>
-        """
-        google_plusone_style = """
-#bookmark_googleplus {float: left; margin-left: 3px; margin-top: 3px;}
-        """
-        google_plusone_script = """
-<script src="https://apis.google.com/js/platform.js" async defer></script>
-        """
-        sitelist.remove("google_plusone")
-
     sites_js = ", ".join("'{0}'".format(site) for site in sitelist)
 
     title = bfo.field('245__a')
@@ -136,12 +120,10 @@ $('#bookmark_sciencewise').bookmark({sites: ['sciencewise']});
 <!-- JQuery Bookmark Button BEGIN -->
 <div id="bookmark"></div>
 <div id="bookmark_sciencewise"></div>
-%(google_plusone_button)s
 <style type="text/css">
     #bookmark_sciencewise, #bookmark {float: left;}
     #bookmark_sciencewise li {padding: 2px; width: 25px;}
     #bookmark_sciencewise ul, #bookmark ul {list-style-image: none;}
-    %(google_plusone_style)s
 </style>
 <script type="text/javascript" src="%(siteurl)s/js/jquery.bookmark.min.js"></script>
 <style type="text/css">@import "%(siteurl)s/css/jquery.bookmark.css";</style>
@@ -158,7 +140,6 @@ $('#bookmark_sciencewise').bookmark({sites: ['sciencewise']});
 // ]]>
 </script>
 <!-- JQuery Bookmark Button END -->
-%(google_plusone_script)s
 """ % {
         'siteurl': CFG_BASE_URL,
         'sciencewise': sciencewise_script,
@@ -174,12 +155,6 @@ $('#bookmark_sciencewise').bookmark({sites: ['sciencewise']});
         ),
         'sites_js': sites_js,
         'url': url,
-        "google_plusone_button":
-            google_plusone_p and google_plusone_button or "",
-        "google_plusone_style":
-            google_plusone_p and google_plusone_style or "",
-        "google_plusone_script":
-            google_plusone_p and google_plusone_script or "",
     }
 
 
