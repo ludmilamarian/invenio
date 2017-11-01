@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Invenio.
-# Copyright (C) 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016 CERN.
+# Copyright (C) 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 CERN.
 #
 # Invenio is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -297,6 +297,20 @@ def bibupload(record, opt_mode=None, opt_notimechange=0, oai_rec_id="", pretend=
         # Update Mode
         # Retrieve the old record to update
         rec_old = get_record(rec_id)
+        # Check if the record has been migrated to a different instance
+        migrated = record_get_field_values(rec_old, '980', ' ', ' ', 'c')
+        if 'MIGRATED' in migrated:
+            if task_get_option('force'):
+                write_message('    WARNING: Found merged record (%rec_id), '
+                              'but force flag is used'  % {'rec_id': rec_id},
+                              stream=sys.stderr)
+            else:
+                msg = ('    WARNING: Found merged record (%rec_id), '
+                      ' please use the --force parameter when calling '
+                      'bibupload' % {'rec_id': rec_id})
+                write_message(msg, stream=sys.stderr)
+                return (1, int(rec_id), msg)
+
         record_had_altered_bit = record_get_field_values(rec_old, CFG_BIBUPLOAD_EXTERNAL_OAIID_TAG[:3], CFG_BIBUPLOAD_EXTERNAL_OAIID_TAG[3], CFG_BIBUPLOAD_EXTERNAL_OAIID_TAG[4], CFG_OAI_PROVENANCE_ALTERED_SUBFIELD)
         # Also save a copy to restore previous situation in case of errors
         original_record = get_record(rec_id)
