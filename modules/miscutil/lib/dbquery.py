@@ -77,7 +77,10 @@ try:
                                        CFG_DATABASE_SLAVE, \
                                        CFG_DATABASE_SLAVE_SU_USER, \
                                        CFG_DATABASE_SLAVE_SU_PASS, \
-                                       CFG_DATABASE_PASSWORD_FILE
+                                       CFG_DATABASE_PASSWORD_FILE, \
+                                       CFG_DATABASE_DBDUMP_TEMP_DIR, \
+                                       CFG_DATABASE_DBDUMP_EOS_DIR, \
+                                       CFG_DATABASE_DBDUMP_EOS_USER
 except ImportError:
     CFG_DATABASE_HOST = 'localhost'
     CFG_DATABASE_PORT = '3306'
@@ -88,6 +91,9 @@ except ImportError:
     CFG_DATABASE_SLAVE_SU_USER = ''
     CFG_DATABASE_SLAVE_SU_PASS = ''
     CFG_DATABASE_PASSWORD_FILE = ''
+    CFG_DATABASE_DBDUMP_TEMP_DIR = ''
+    CFG_DATABASE_DBDUMP_EOS_DIR = ''
+    CFG_DATABASE_DBDUMP_EOS_USER = ''
 
 def _get_password_from_database_password_file(user):
     """

@@ -32,6 +32,9 @@ from invenio.dbquery import CFG_DATABASE_HOST, \
                             CFG_DATABASE_NAME, \
                             CFG_DATABASE_PORT, \
                             CFG_DATABASE_SLAVE, \
+                            CFG_DATABASE_DBDUMP_TEMP_DIR, \
+                            CFG_DATABASE_DBDUMP_EOS_DIR, \
+                            CFG_DATABASE_DBDUMP_EOS_USER, \
                             get_connection_for_dump_on_slave, \
                             run_sql
 from invenio.bibtask import task_init, \
@@ -52,19 +55,6 @@ def get_table_names(value):
     """
     rex = re.compile(value)
     return [row[0] for row in run_sql("SHOW TABLES") if rex.search(row[0])]
-
-def _delete_old_dumps(dirname, filename, number_to_keep):
-    """
-    Look for files in DIRNAME directory starting with FILENAME
-    pattern.  Delete up to NUMBER_TO_KEEP files (when sorted
-    alphabetically, which is equal to sorted by date).  Useful to
-    prune old dump files.
-    """
-    files = [x for x in os.listdir(dirname) if x.startswith(filename)]
-    files.sort()
-    for afile in files[:-number_to_keep]:
-        write_message("... deleting %s" % dirname + os.sep + afile)
-        os.remove(dirname + os.sep + afile)
 
 def check_slave_is_up(connection=None):
     """Raise an StandardError in case the slave is not correctly up."""
@@ -220,12 +210,6 @@ def _dbdump_elaborate_submit_param(key, value, dummyopts, dummyargs):
             task_set_option('number', int(value))
         except ValueError:
             raise StandardError("ERROR: Number '%s' is not integer." % (value,))
-    elif key in ('-o', '--output'):
-        if os.path.isdir(value):
-            task_set_option('output', value)
-        else:
-            raise StandardError("ERROR: Output '%s' is not a directory." % \
-                  (value,))
     elif key in ('--params',):
         task_set_option('params', value)
     elif key in ('--compress',):
@@ -247,6 +231,8 @@ def _dbdump_elaborate_submit_param(key, value, dummyopts, dummyargs):
             task_set_option("ignore_tables", value)
         except re.error:
             raise StandardError, "ERROR: Passed string: '%s' is not a valid regular expression." % value
+    elif key in ('--ftag',):
+        task_set_option('ftag', value)
     else:
         return False
     return True
@@ -277,8 +263,6 @@ def _dbdump_run_task_core():
             helper_arguments = []
             if task_get_option("number"):
                 helper_arguments += ["--number", str(task_get_option("number"))]
-            if task_get_option("output"):
-                helper_arguments += ["--output", str(task_get_option("output"))]
             if task_get_option("params"):
                 helper_arguments += ["--params", str(task_get_option("params"))]
             if task_get_option("ignore_tables"):
@@ -287,6 +271,8 @@ def _dbdump_run_task_core():
                 helper_arguments += ["--compress"]
             if task_get_option("slave"):
                 helper_arguments += ["--slave", str(task_get_option("slave"))]
+            if task_get_option("ftag"):
+                helper_arguments += ["--ftag", str(task_get_option("ftag"))]
             helper_arguments += ['-N', 'slavehelper', '--dump-on-slave-helper']
             task_id = task_low_level_submission('dbdump', task_get_task_param('user'), '-P4', *helper_arguments)
             write_message("Slave scheduled with ID %s" % task_id)
@@ -301,12 +287,12 @@ def _dbdump_run_task_core():
 
         task_update_progress("Reading parameters")
         write_message("Reading parameters started")
-        output_dir = task_get_option('output', CFG_LOGDIR)
         output_num = task_get_option('number', 5)
         params = task_get_option('params', None)
         compress = task_get_option('compress', False)
         slave = task_get_option('slave', False)
         ignore_tables = task_get_option('ignore_tables', None)
+        ftag = task_get_option('ftag', '')
         if ignore_tables:
             ignore_tables = get_table_names(ignore_tables)
         else:
@@ -322,12 +308,17 @@ def _dbdump_run_task_core():
         task_update_progress("Dumping database")
         write_message("Database dump started")
 
-        if slave:
-            output_file_prefix = 'slave-%s-dbdump-' % (CFG_DATABASE_NAME,)
-        else:
-            output_file_prefix = '%s-dbdump-' % (CFG_DATABASE_NAME,)
-        output_file = output_file_prefix + output_file_suffix
-        dump_path = output_dir + os.sep + output_file
+        output_file_prefix = '{slave}{dbname}{ftag}-dbdump'.format(
+            slave='slave-' if slave else '',
+            dbname=CFG_DATABASE_NAME,
+            ftag='-'+ftag if ftag else ''
+        )
+
+        output_file = '{prefix}-{suffix}'.format(
+            prefix=output_file_prefix,
+            suffix=output_file_suffix
+        )
+        dump_path = os.path.join(CFG_DATABASE_DBDUMP_TEMP_DIR, output_file)
         dump_database(dump_path, \
                         host=host,
                         port=port,
@@ -339,14 +330,84 @@ def _dbdump_run_task_core():
         if connection and task_get_option('dump_on_slave_helper_mode'):
             write_message("Reattaching slave")
             attach_slave(connection)
+
+    task_update_progress("Moving new dump to EOS")
+    write_message("Moving new dump to EOS started")
+
+    _new_kerberos_token()
+
+    _move_dump(dump_path, CFG_DATABASE_DBDUMP_EOS_DIR)
+
+    write_message("Moving new dump to EOS ended")
+
     # prune old dump files:
     task_update_progress("Pruning old dump files")
     write_message("Pruning old dump files started")
-    _delete_old_dumps(output_dir, output_file_prefix, output_num)
+
+    _delete_old_dumps(CFG_DATABASE_DBDUMP_EOS_DIR, output_file_prefix, output_num)
+
     write_message("Pruning old dump files ended")
     # we are done:
     task_update_progress("Done.")
     return True
+
+
+def _new_kerberos_token():
+    """Renew Kerberos token."""
+    cmd = 'unset KRB5CCNAME && kinit -kt /etc/{0}.keytab {0} && eosfusebind'.format(
+        CFG_DATABASE_DBDUMP_EOS_USER
+    )
+    write_message(cmd, verbose=2)
+
+    exit_code, stdout, stderr = run_shell_command(cmd, None, None)
+
+    if exit_code:
+        raise StandardError(
+            "ERROR: mv db dump to EOS exit code is %s. stderr: %s stdout: "
+            "%s" % \
+            (repr(exit_code), \
+             repr(stderr), \
+             repr(stdout)))
+
+
+def _move_dump(dump_filepath, dumps_dir):
+    """Move the dump file to the backup dir."""
+    write_message("... moving {0} to {1}".format(dump_filepath, dumps_dir))
+
+    cmd = 'mv {0} {1}'.format(dump_filepath, dumps_dir)
+    write_message(cmd, verbose=2)
+
+    exit_code, stdout, stderr = run_shell_command(cmd, None, None)
+
+    if exit_code:
+        raise StandardError("ERROR: mv db dump to EOS exit code is %s. stderr: %s stdout: %s" % \
+                            (repr(exit_code), \
+                             repr(stderr), \
+                             repr(stdout)))
+    else:
+        write_message("... done moving")
+
+
+def _delete_old_dumps(dirname, filename_prefix, number_to_keep):
+    """
+    Look for files in DIRNAME directory starting with FILENAME
+    pattern.  Delete up to NUMBER_TO_KEEP files (when sorted
+    alphabetically, which is equal to sorted by date).  Useful to
+    prune old dump files.
+    """
+    cmd = 'ls -t {dirname_prefix}* | tail -n +{keep} | xargs rm -f'.format(
+        dirname_prefix=os.path.join(dirname, filename_prefix),
+        keep=number_to_keep+1
+    )
+    write_message(cmd, verbose=2)
+
+    exit_code, stdout, stderr = run_shell_command(cmd, None, None)
+
+    if exit_code:
+        raise StandardError("ERROR: delete old db dumps from EOS exit code is %s. stderr: %s stdout: %s" % \
+                            (repr(exit_code), \
+                             repr(stderr), \
+                             repr(stdout)))
 
 
 def main():
@@ -354,21 +415,22 @@ def main():
     task_init(authorization_action='rundbdump',
               authorization_msg="DB Dump Task Submission",
               help_specific_usage="""\
-  -o, --output=DIR      Output directory. [default=%s]
   -n, --number=NUM      Keep up to NUM previous dump files. [default=5]
   --params=PARAMS       Specify your own mysqldump parameters. Optional.
   --compress            Compress dump directly into gzip.
   -S, --slave=HOST      Perform the dump from a slave, if no host use CFG_DATABASE_SLAVE.
   --ignore-tables=regex Ignore tables matching the given regular expression
+  --ftag                Define a tag that will be added to the filename. Useful if you need to distinguish different db dumps.
 
 Examples:
     $ dbdump --ignore-tables '^(idx|rnk)'
     $ dbdump -n3 -o/tmp -s1d -L 02:00-04:00
-""" % CFG_LOGDIR,
-              specific_params=("n:o:p:S:",
-                               ["number=", "output=", "params=", "slave=", "compress", 'ignore-tables=', "dump-on-slave-helper"]),
+""",
+              specific_params=("n:p:S:",
+                               ["number=", "params=", "slave=", "compress", 'ignore-tables=', "dump-on-slave-helper", "ftag="]),
               task_submit_elaborate_specific_parameter_fnc=_dbdump_elaborate_submit_param,
               task_run_fnc=_dbdump_run_task_core)
+
 
 if __name__ == '__main__':
     main()
