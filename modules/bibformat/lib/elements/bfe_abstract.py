@@ -97,7 +97,7 @@ def format_element(bfo, prefix_en, prefix_fr, suffix_en, suffix_fr, limit, max_c
     else:
         abstract_en = []
 
-    if abstract_en and additional_abstracts:
+    if additional_abstracts:
         abstract_en.extend(additional_abstracts)
 
     abstract_en = separator_en.join(abstract_en)
