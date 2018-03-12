@@ -481,7 +481,8 @@ class Collection:
                     recIDs = sort_records(None, recIDs, '269__c', 'a')
                 elif self.name in ['LHCb Talks']:
                     recIDs = sort_records(None, recIDs, 'reportnumber', 'a')
-                elif self.name in ['CERN Yellow Reports']:
+                elif self.name in ['CERN Yellow Reports',
+                                   'Advisory Committee of CERN Users (ACCU)']:
                     recIDs = sort_records(None, recIDs, '084__a', 'a')
                 elif self.name in ['CERN Courier Issues',
                                    'CERN Courier Articles',
