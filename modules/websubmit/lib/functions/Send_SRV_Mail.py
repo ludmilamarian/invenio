@@ -71,19 +71,26 @@ def Send_SRV_Mail(parameters, curdir, form, user_info=None):
     FROMADDR = '%s Submission Engine <%s>' % (CFG_SITE_NAME,CFG_SITE_SUPPORT_EMAIL)
     addresses = parameters['addressesSRV']
     addresses = addresses.strip()
+
+    SuE = ""
     if parameters['emailFile'] is not None and parameters['emailFile']!="" and os.path.exists("%s/%s" % (curdir,parameters['emailFile'])):
         fp = open("%s/%s" % (curdir,parameters['emailFile']), "r")
         SuE = fp.read()
+        SuE = SuE.replace("\n", ",")
         fp.close()
-    else:
-        SuE = ""
-    SuE = SuE.replace("\n",",")
+
+    receivers = ""
+    if addresses:
+        receivers += addresses + ","
+    if SuE:
+        receivers += SuE
+
+    note = ""
     if parameters['noteFile'] is not None and parameters['noteFile']!= "" and os.path.exists("%s/%s" % (curdir,parameters['noteFile'])):
         fp = open("%s/%s" % (curdir,parameters['noteFile']), "r")
         note = fp.read()
         fp.close()
-    else:
-        note = ""
+
     title = Get_Field("245__a",sysno)
     author = Get_Field('100__a',sysno)
     author += Get_Field('700__a',sysno)
@@ -91,6 +98,6 @@ def Send_SRV_Mail(parameters, curdir, form, user_info=None):
     message = "A revised version of document %s has been submitted.\n\nTitle: %s\nAuthor(s): %s\nURL: <%s/%s/%s>%s" % (rn,title,author,CFG_SITE_URL,CFG_SITE_RECORD,sysno,note)
 
     # send the email
-    send_email(FROMADDR, SuE, "%s revised" % rn, message, copy_to_admin=CFG_WEBSUBMIT_COPY_MAILS_TO_ADMIN)
+    if receivers:
+        send_email(FROMADDR, receivers, "%s revised" % rn, message, copy_to_admin=CFG_WEBSUBMIT_COPY_MAILS_TO_ADMIN)
     return ""
-
