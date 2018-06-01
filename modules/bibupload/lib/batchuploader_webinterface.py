@@ -23,20 +23,25 @@ __revision__ = "$Id$"
 
 __lastupdated__ = """$Date$"""
 
+import os
+import tempfile
+
 from invenio.webinterface_handler_wsgi_utils import Field
-from invenio.config import CFG_SITE_SECURE_URL
+from invenio.config import CFG_SITE_SECURE_URL, CFG_TMPDIR
 from invenio.urlutils import redirect_to_url
 from invenio.messages import gettext_set_language
 from invenio.webinterface_handler import wash_urlargd, WebInterfaceDirectory
 from invenio.webinterface_handler_config import SERVER_RETURN, HTTP_NOT_FOUND
 from invenio.webinterface_handler_wsgi_utils import handle_file_post
-from invenio.webuser import getUid, page_not_authorized, get_email
+from invenio.webuser import getUid, page_not_authorized, get_email, \
+     collect_user_info
 from invenio.webpage import page
 
 from invenio.batchuploader_engine import metadata_upload, cli_upload, \
      get_user_metadata_uploads, get_user_document_uploads, document_upload, \
      get_daemon_doc_files, get_daemon_meta_files, cli_allocate_record, \
      user_authorization, perform_upload_check, _transform_input_to_marcxml
+from invenio.bibtask import task_low_level_submission
 
 try:
     import invenio.template
@@ -48,8 +53,10 @@ except:
 class WebInterfaceBatchUploaderPages(WebInterfaceDirectory):
     """Defines the set of /batchuploader pages."""
 
-    _exports = ['', 'metadata', 'metasubmit', 'history', 'documents',
-        'docsubmit', 'daemon', 'allocaterecord', 'confirm']
+    _exports = [
+        '', 'metadata', 'metasubmit', 'history', 'documents', 'docsubmit',
+        'daemon', 'allocaterecord', 'allocatemigratedrecord', 'confirm'
+    ]
 
     def _lookup(self, component, path):
         def restupload(req, form):
@@ -183,6 +190,36 @@ class WebInterfaceBatchUploaderPages(WebInterfaceDirectory):
         Interface for robots to allocate a record and obtain a record identifier
         """
         return cli_allocate_record(req)
+
+    def allocatemigratedrecord(self, req, form):
+        """
+        Interface for allocating a record and tag it as migrated in order to redirect
+        to a CDS satellite, for ex. videos.
+        """
+        recid = cli_allocate_record(req)
+        user_info = collect_user_info(req)
+        user_agent = user_info['agent']
+        fd, path = tempfile.mkstemp(
+            prefix='allocatemigratedrecord_', suffix='.xml', dir=CFG_TMPDIR)
+        marc_content = """ <record>
+                                <controlfield tag="001">%(recid)s</controlfield>
+                                <datafield tag="970" ind1=" " ind2=" ">
+                                    <subfield code="d">https://%(useragent)s.cern.ch/record/%(recid)s</subfield>
+                                </datafield>
+                                <datafield tag="980" ind1=" " ind2=" ">
+                                    <subfield code="c">MIGRATED</subfield>
+                                </datafield>
+                            </record> """ % {
+            'recid': recid,
+            'useragent': user_agent
+        }
+
+        with os.fdopen(fd, 'w') as tmp:
+            tmp.write(marc_content)
+
+        task_arguments = ('bibupload', 'admin', '-r', path, "-N", "batchupload")
+        task_low_level_submission(*task_arguments)
+        return recid
 
     def metasubmit(self, req, form):
         """ Function called after submitting the metadata upload form.
