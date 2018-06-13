@@ -27,7 +27,7 @@ import os
 import tempfile
 
 from invenio.webinterface_handler_wsgi_utils import Field
-from invenio.config import CFG_SITE_SECURE_URL, CFG_TMPDIR
+from invenio.config import CFG_SITE_SECURE_URL, CFG_TMPSHAREDDIR
 from invenio.urlutils import redirect_to_url
 from invenio.messages import gettext_set_language
 from invenio.webinterface_handler import wash_urlargd, WebInterfaceDirectory
@@ -200,7 +200,9 @@ class WebInterfaceBatchUploaderPages(WebInterfaceDirectory):
         user_info = collect_user_info(req)
         user_agent = user_info['agent']
         fd, path = tempfile.mkstemp(
-            prefix='allocatemigratedrecord_', suffix='.xml', dir=CFG_TMPDIR)
+            prefix='allocatemigratedrecord_',
+            suffix='.xml',
+            dir=CFG_TMPSHAREDDIR)
         marc_content = """ <record>
                                 <controlfield tag="001">%(recid)s</controlfield>
                                 <datafield tag="970" ind1=" " ind2=" ">
