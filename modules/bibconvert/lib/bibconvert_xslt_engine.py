@@ -308,7 +308,7 @@ def convert(xmltext, template_filename=None, template_source=None):
                 return self.resolve_filename(url, context)
         from StringIO import StringIO
 
-        parser = etree.XMLParser()
+        parser = etree.XMLParser(huge_tree=True)
         parser.resolvers.add(FileResolver())
         try:
             xml = etree.parse(StringIO(xmltext), parser)
