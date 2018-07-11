@@ -2889,12 +2889,12 @@ def search_unit_in_bibxxx(p, f, type, wl=0):
                 query_params_and_tag = query_params + (t,)
             if use_query_limit:
                 try:
-                    res = run_sql_with_limit(query, query_params_and_tag, wildcard_limit=wl)
+                    res = run_sql_with_limit(query, query_params_and_tag, wildcard_limit=wl, run_on_slave=True)
                 except InvenioDbQueryWildcardLimitError, excp:
                     res = excp.res
                     limit_reached = 1 # set the limit reached flag to true
             else:
-                res = run_sql(query, query_params_and_tag)
+                res = run_sql(query, query_params_and_tag, run_on_slave=True)
         # fill the result set:
         for id_bibrec in res:
             if id_bibrec[0]:
@@ -3632,12 +3632,12 @@ def get_nbhits_in_bibxxx(p, f, in_hitset=None):
             res = run_sql("""SELECT bibx.id_bibrec FROM %s AS bibx, %s AS bx
                               WHERE bx.value=%%s AND bx.tag LIKE %%s
                                 AND bibx.id_bibxxx=bx.id""" % (bibx, bx),
-                          (p, t + "%"))
+                          (p, t + "%"), run_on_slave=True)
         else:
             res = run_sql("""SELECT bibx.id_bibrec FROM %s AS bibx, %s AS bx
                               WHERE bx.value=%%s AND bx.tag=%%s
                                 AND bibx.id_bibxxx=bx.id""" % (bibx, bx),
-                          (p, t))
+                          (p, t), run_on_slave=True)
         for row in res:
             recIDs[row[0]] = 1
 
@@ -4719,9 +4719,7 @@ def print_records(req, recIDs, jrec=1, rg=CFG_WEBSEARCH_DEF_RECORDS_IN_GROUPS, f
                     link_ln = ''
 
                     if 'ln' in req.form:
-                        link_ln = "?ln={0}".format(
-                            req.form.get('ln', CFG_SITE_LANG)
-                        )
+                        link_ln = "?ln={0}".format(ln)
 
                     recid_to_display = recid  # Record ID used to build the URL.
                     if CFG_WEBSEARCH_USE_ALEPH_SYSNOS:
@@ -5053,8 +5051,13 @@ def print_record(recID, format='hb', ot='', ln=CFG_SITE_LANG, decompress=zlib.de
         display_claim_this_paper = False
 
     can_edit_record = False
-    if check_user_can_edit_record(user_info, recID):
-        can_edit_record = True
+    ##################################
+    # TODO_CDS:                      #
+    # It slows down the search a lot #
+    ##################################
+    # if check_user_can_edit_record(user_info, recID):
+    #     can_edit_record = True
+    ##################################
 
     out = ""
 
