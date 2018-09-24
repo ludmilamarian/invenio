@@ -409,7 +409,7 @@ def log_sql_query(dbhost, sql, param=None):
     except:
         pass
 
-def get_table_update_time(tablename, run_on_slave=False):
+def get_table_update_time(tablename, run_on_slave=True):
     """Return update time of TABLENAME.  TABLENAME can contain
        wildcard `%' in which case we return the maximum update time
        value.
