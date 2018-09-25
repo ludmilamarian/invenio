@@ -1836,7 +1836,7 @@ def get_customevent_args(event_id):
 
 # CUSTOM SUMMARY SECTION
 
-def get_custom_summary_data(query, tag):
+def get_custom_summary_data(query, tag, count_repetitive_values=True):
     """Returns the annual report data for the specified year
 
     @param query: Search query to make customized report
@@ -1844,6 +1844,9 @@ def get_custom_summary_data(query, tag):
 
     @param tag: MARC tag for the output
     @type tag: str
+
+    @param count_repetitive_values: Count the repeated tags
+    @type count_repetitive_values: bool
     """
 
     # Check arguments
@@ -1854,7 +1857,9 @@ def get_custom_summary_data(query, tag):
     recids = perform_request_search(p=query, of="id", wl=0)
 
     # Then return list by tag
-    pub = get_most_popular_field_values(recids, tag)
+    pub = get_most_popular_field_values(
+        recids, tag, count_repetitive_values=count_repetitive_values
+    )
 
     if len(pub) == 0:
         return []
